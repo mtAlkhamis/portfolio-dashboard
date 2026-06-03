@@ -517,30 +517,53 @@
     /* Masthead */
     .masthead { padding: 28px 0 20px; }
     .masthead h1 { font-size: 28px; }
-    .masthead .subtitle { font-size: 13px; }
-    .masthead .meta { flex-direction: column; gap: 4px; font-size: 12px; }
+    .masthead .subtitle { font-size: 14px; }
+    .masthead .meta { flex-direction: column; gap: 4px; font-size: 13px; }
 
-    /* Upload bar */
-    .upload-bar { flex-wrap: wrap; gap: 10px; }
-    .upload-bar button.load-btn {
-      width: 100%; padding: 12px; font-size: 14px; text-align: center;
+    /* Upload bar — stack into rows */
+    .upload-bar {
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
     }
+    .upload-bar button.load-btn {
+      width: 100%; padding: 13px; font-size: 15px; text-align: center;
+    }
+    #fileInfo { width: 100%; font-size: 12px; text-align: center; }
+    #priceTag { margin-left: 0; width: 100%; text-align: center;
+                font-size: 13px; }
 
-    /* Theme toggle — full width, easier to tap */
-    .theme-toggle { width: 100%; justify-content: center; }
-    .theme-toggle button { flex: 1; padding: 8px 0; font-size: 13px; }
+    /* Theme toggle — own centered row, equal-width buttons, easy to tap */
+    .theme-toggle {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      order: 10; /* push to last row */
+    }
+    .theme-toggle button {
+      flex: 1;
+      padding: 10px 4px;
+      font-size: 14px;
+      justify-content: center;
+    }
+    .theme-toggle button svg { width: 14px; height: 14px; }
 
-    /* KPI headline — 2 columns on phone, 1 column on very small */
+    /* KPI headline */
     .headline { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .headline .kpi-value { font-size: 22px; }
-    .headline .kpi-label { font-size: 10px; }
+    .headline .kpi-label { font-size: 11px; }
+    .headline .kpi-sub   { font-size: 12px; }
 
     /* Section headers */
-    .section h2 { font-size: 18px; }
-    .section .section-sub { font-size: 12px; }
+    .section h2 { font-size: 20px; }
+    .section .section-sub { font-size: 13px; }
 
-    /* Member cards — 1 per row on phone */
+    /* Member cards — 1 per row, bigger fonts */
     .members { grid-template-columns: 1fr; gap: 10px; }
+    .member { font-size: 15px; }
+    .member .name { font-size: 17px; }
+    .member .row .label { font-size: 13px; }
+    .member .row .value { font-size: 15px; }
 
     /* Charts */
     .chart-card { padding: 14px; }
@@ -550,21 +573,21 @@
     .donut-content { flex-direction: column; align-items: center; }
     .donut-chart-wrap { width: 180px; height: 180px; }
     .donut-legend { width: 100%; max-width: 300px; }
+    .donut-legend li { font-size: 13px; }
 
-    /* Tables — horizontal scroll so columns don't crush */
-    .table-card {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-    .table-card table { min-width: 520px; }
+    /* Tables — horizontal scroll */
+    .table-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .table-card table { min-width: 520px; font-size: 13px; }
 
-    /* Benchmark period buttons — larger tap targets */
+    /* Benchmark period buttons */
     .benchmark-periods { gap: 6px; }
-    .period-btn { padding: 10px 14px; font-size: 13px; }
+    .period-btn { padding: 11px 14px; font-size: 14px; }
 
-    /* Benchmark summary stats — wrap to 2 columns */
+    /* Benchmark summary stats */
     .benchmark-summary { gap: 14px; }
-    .bm-stat-value { font-size: 18px; }
+    .bm-stat-value { font-size: 20px; }
+    .bm-stat-label { font-size: 12px; }
+    .bm-stat-delta { font-size: 13px; }
   }
 </style>
 </head>
