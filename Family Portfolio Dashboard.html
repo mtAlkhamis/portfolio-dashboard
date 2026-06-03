@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Alkhamis Family Portfolio — Performance Report</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAF6EC;
+    --paper: #FFFDF7;
+    --ink: #1F3A2E;
+    --ink-soft: #4B5C53;
+    --muted: #8A8676;
+    --line: #E8DFC8;
+    --line-soft: #F1EAD3;
+    --accent: #2D6A4F;
+    --accent-soft: #DDE9D4;
+    --gold: #B8924E;
+    --positive: #2D6A4F;
+    --negative: #B0413E;
+    --pos-bar-start: #4A8268;
+    --pos-bar-end:   #1F4F38;
+    --neg-bar-start: #C56462;
+    --neg-bar-end:   #8B2D29;
+    --cash-bar-start: #D4A964;
+    --cash-bar-end:   #9B7235;
+    --pill-buy-bg: #E0F0E0;       --pill-buy-fg: #1F5C3E;
+    --pill-sell-bg: #FFE8DA;      --pill-sell-fg: #9B4216;
+    --pill-div-bg:  #FFF3C4;      --pill-div-fg:  #8C6606;
+    --pill-dep-bg:  #D8E8F5;      --pill-dep-fg:  #235480;
+    --shadow-card: 0 1px 2px rgba(31, 58, 46, 0.04), 0 4px 16px rgba(31, 58, 46, 0.05);
+    --shadow-card-hover: 0 4px 8px rgba(31, 58, 46, 0.06), 0 12px 28px rgba(31, 58, 46, 0.10);
+    --font-display: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+  }
+  /* Dark mode palette — applied when the device prefers dark OR the user has
+     explicitly picked Dark via the theme toggle. The :not([data-theme="light"])
+     guard lets the Light override win even when the OS is dark. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121A16;
+      --paper: #1B2A22;
+      --ink: #E8E2D0;
+      --ink-soft: #B8B5A8;
+      --muted: #8A8676;
+      --line: #2C3D34;
+      --line-soft: #243029;
+      --accent: #5BAE85;
+      --accent-soft: #243B30;
+      --gold: #D4AC65;
+      --positive: #6FBE92;
+      --negative: #E07770;
+      --pos-bar-start: #4A8268;
+      --pos-bar-end:   #1F4F38;
+      --neg-bar-start: #E07770;
+      --neg-bar-end:   #9B3A36;
+      --cash-bar-start: #D4A964;
+      --cash-bar-end:   #9B7235;
+      --pill-buy-bg: #1F3D2B;     --pill-buy-fg: #9CD4B0;
+      --pill-sell-bg: #3D2417;    --pill-sell-fg: #E8A878;
+      --pill-div-bg:  #3D3414;    --pill-div-fg:  #E8C870;
+      --pill-dep-bg:  #1F324A;    --pill-dep-fg:  #9CC0E0;
+      --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.35);
+      --shadow-card-hover: 0 4px 8px rgba(0, 0, 0, 0.35), 0 12px 28px rgba(0, 0, 0, 0.50);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121A16;
+    --paper: #1B2A22;
+    --ink: #E8E2D0;
+    --ink-soft: #B8B5A8;
+    --muted: #8A8676;
+    --line: #2C3D34;
+    --line-soft: #243029;
+    --accent: #5BAE85;
+    --accent-soft: #243B30;
+    --gold: #D4AC65;
+    --positive: #6FBE92;
+    --negative: #E07770;
+    --pos-bar-start: #4A8268;
+    --pos-bar-end:   #1F4F38;
+    --neg-bar-start: #E07770;
+    --neg-bar-end:   #9B3A36;
+    --cash-bar-start: #D4A964;
+    --cash-bar-end:   #9B7235;
+    --pill-buy-bg: #1F3D2B;     --pill-buy-fg: #9CD4B0;
+    --pill-sell-bg: #3D2417;    --pill-sell-fg: #E8A878;
+    --pill-div-bg:  #3D3414;    --pill-div-fg:  #E8C870;
+    --pill-dep-bg:  #1F324A;    --pill-dep-fg:  #9CC0E0;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.35);
+    --shadow-card-hover: 0 4px 8px rgba(0, 0, 0, 0.35), 0 12px 28px rgba(0, 0, 0, 0.50);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Helvetica Neue", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+  .report {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 36px 60px;
+  }
+
+  /* Upload bar (utility, small, hidden in print) */
+  .upload-bar {
+    margin-top: 20px;
+    padding: 10px 14px;
+    background: color-mix(in srgb, var(--paper) 60%, transparent);
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    display: flex; align-items: center; gap: 14px;
+    font-size: 13px; color: var(--muted);
+  }
+  .upload-bar button.load-btn {
+    background: var(--accent); color: white; border: none;
+    padding: 6px 14px; border-radius: 5px; font-weight: 600;
+    cursor: pointer; font-size: 12px;
+    transition: background 0.15s;
+  }
+  .upload-bar button.load-btn:hover { background: var(--ink); }
+  .upload-bar input[type=file] { display: none; }
+  .upload-bar .file-info { flex: 1; min-width: 0; }
+
+  /* Theme toggle — segmented control: Auto / Light / Dark */
+  .theme-toggle {
+    display: inline-flex;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 2px;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .theme-toggle button {
+    background: transparent;
+    border: none;
+    padding: 4px 9px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .theme-toggle button:hover { color: var(--ink); }
+  .theme-toggle button.active {
+    background: var(--paper);
+    color: var(--ink);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+  .theme-toggle button svg {
+    width: 12px; height: 12px;
+    stroke: currentColor; fill: none;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  }
+  @media print {
+    .upload-bar { display: none; }
+    body { background: white; }
+    .report { padding-top: 20px; }
+  }
+
+  /* Masthead */
+  .masthead {
+    padding: 56px 0 36px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 40px;
+  }
+  .eyebrow {
+    text-transform: uppercase; letter-spacing: 3px;
+    font-size: 11px; color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+  .masthead h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 52px; font-weight: 700;
+    letter-spacing: -1.2px; color: var(--ink);
+    line-height: 1.05;
+  }
+  .masthead .subtitle {
+    margin-top: 12px;
+    font-family: var(--font-display);
+    color: var(--ink-soft); font-size: 17px;
+    font-style: italic; font-weight: 600;
+  }
+  .masthead .meta {
+    margin-top: 22px;
+    display: flex; gap: 28px;
+    font-size: 13px; color: var(--muted);
+  }
+  .masthead .meta .label { font-weight: 600; color: var(--ink); margin-right: 5px; }
+
+  /* Headline KPIs */
+  .headline {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 40px 36px;
+    margin-bottom: 40px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 28px;
+    box-shadow: var(--shadow-card);
+  }
+  .headline .kpi { text-align: center; }
+  .headline .kpi-label {
+    text-transform: uppercase; letter-spacing: 1.4px;
+    font-size: 10px; font-weight: 700; color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .headline .kpi-value {
+    font-family: var(--font-display);
+    font-size: 36px; font-weight: 700;
+    color: var(--ink); letter-spacing: -0.8px;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+  }
+  .headline .kpi-value.positive { color: var(--positive); }
+  .headline .kpi-value.negative { color: var(--negative); }
+  .headline .kpi-sub {
+    margin-top: 6px;
+    font-size: 11px; color: var(--muted);
+  }
+
+  /* Performance banner (annualized) */
+  .perf-banner {
+    background: linear-gradient(135deg, var(--accent-soft) 0%, color-mix(in srgb, var(--gold) 15%, transparent) 100%);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    padding: 20px 26px;
+    margin-bottom: 50px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+  .perf-banner .perf-rate {
+    font-weight: 800; color: var(--accent); font-size: 18px;
+  }
+
+  /* Section */
+  .section { margin-bottom: 52px; }
+  .section h2 {
+    margin: 0 0 6px 0;
+    font-family: var(--font-display);
+    font-size: 26px; font-weight: 700;
+    color: var(--ink); letter-spacing: -0.5px;
+  }
+  .section .section-sub {
+    color: var(--muted); font-size: 13px;
+    margin-bottom: 22px;
+    font-style: italic;
+  }
+
+  /* Family member cards */
+  .members {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 12px;
+  }
+  .member {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 12px;
+    text-align: center;
+    box-shadow: var(--shadow-card);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .member:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-card-hover);
+  }
+  .member .name {
+    font-family: var(--font-display);
+    font-size: 17px; font-weight: 700;
+    color: var(--ink);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line-soft);
+    margin-bottom: 12px;
+    letter-spacing: -0.2px;
+  }
+  .member .row {
+    display: flex; justify-content: space-between;
+    font-size: 12px;
+    padding: 3px 0;
+  }
+  .member .row .label { color: var(--muted); }
+  .member .row .value {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .member .row.headline-row {
+    border-top: 1px solid var(--line-soft);
+    margin-top: 8px; padding-top: 10px;
+  }
+  .member .row.headline-row .value {
+    font-size: 14px;
+    color: var(--positive);
+  }
+  .member .row .value.negative { color: var(--negative); }
+
+  /* Two-column chart row */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 50px;
+  }
+  .chart-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 22px;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.25s ease;
+  }
+  .chart-card:hover { box-shadow: var(--shadow-card-hover); }
+  .chart-card h3 {
+    margin: 0 0 16px 0;
+    font-size: 13px;
+    text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--ink-soft); font-weight: 700;
+  }
+  .chart-wrap {
+    position: relative; height: 240px;
+  }
+
+  /* Donut + CSS-controlled side legend (replaces Chart.js's built-in legend so
+     it resizes cleanly when the browser width changes) */
+  .donut-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 240px;
+  }
+  .donut-chart-wrap {
+    position: relative;
+    flex: 1 1 58%;
+    min-width: 0;
+    height: 240px;
+  }
+  .donut-legend {
+    flex: 1 1 42%;
+    min-width: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+  }
+  .donut-legend li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px dotted var(--line-soft);
+  }
+  .donut-legend li:last-child { border-bottom: none; }
+  .donut-legend .swatch {
+    width: 12px; height: 12px; border-radius: 3px;
+    flex: 0 0 12px;
+  }
+  .donut-legend .legend-label {
+    flex: 1; color: var(--ink); font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .donut-legend .legend-pct {
+    color: var(--muted); font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+  }
+
+  /* Tables */
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    text-align: left; padding: 12px 10px;
+    color: var(--muted); font-weight: 600;
+    border-bottom: 2px solid var(--line);
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  td {
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--line-soft);
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  th.num, td.num { text-align: right; }
+  td.pos { color: var(--positive); }
+  td.neg { color: var(--negative); }
+  tr.total td {
+    font-weight: 700;
+    background: var(--accent-soft);
+    border-top: 2px solid var(--accent);
+  }
+  .table-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 22px 26px;
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Activity pills */
+  .pill {
+    display: inline-block; padding: 2px 9px; border-radius: 12px;
+    font-size: 11px; background: var(--accent-soft); color: var(--accent);
+    font-weight: 600;
+  }
+  .pill.buy { background: var(--pill-buy-bg); color: var(--pill-buy-fg); }
+  .pill.sell { background: var(--pill-sell-bg); color: var(--pill-sell-fg); }
+  .pill.dividend { background: var(--pill-div-bg); color: var(--pill-div-fg); }
+  .pill.deposit { background: var(--pill-dep-bg); color: var(--pill-dep-fg); }
+  .pill.withdraw { background: color-mix(in srgb, var(--negative) 20%, transparent); color: var(--negative); }
+
+  /* Footer */
+
+  /* ── Benchmark Section ── */
+  .benchmark-periods {
+    display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .period-btn {
+    padding: 6px 16px; border-radius: 20px;
+    border: 1.5px solid var(--line);
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
+    font-family: inherit;
+  }
+  .period-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  /* Active state: accent-tinted fill + accent text (always readable in both
+     themes since both --accent-soft and --accent are tuned per theme) +
+     a soft outer ring as the "surrounding box" the user asked for. */
+  .period-btn.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  .period-btn.active:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .benchmark-summary {
+    display: flex; gap: 24px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .bm-stat {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .bm-stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .bm-stat-value { font-size: 22px; font-weight: 700; font-family: 'Playfair Display', serif; color: var(--ink); }
+  .bm-stat-value.pos { color: var(--positive); }
+  .bm-stat-value.neg { color: var(--negative); }
+  .bm-stat-delta { font-size: 12px; color: var(--muted); }
+  .bm-stat-delta.pos { color: var(--positive); }
+  .bm-stat-delta.neg { color: var(--negative); }
+  .benchmark-note { font-size: 11px; color: var(--muted); margin-top: 8px; font-style: italic; }
+
+  footer {
+    margin-top: 60px; padding-top: 24px;
+    border-top: 1px solid var(--line);
+    text-align: center;
+    color: var(--muted); font-size: 12px;
+  }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+  }
+  .empty strong {
+    display: block;
+    font-size: 18px; color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  @media (max-width: 900px) {
+    .headline { grid-template-columns: repeat(2, 1fr); }
+    .two-col { grid-template-columns: 1fr; }
+    .members { grid-template-columns: repeat(2, 1fr); }
+    .masthead h1 { font-size: 36px; }
+    .headline .kpi-value { font-size: 28px; }
+    .report { padding: 0 20px 40px; }
+  }
+  @media print {
+    .section, .two-col { page-break-inside: avoid; }
+    .members { grid-template-columns: repeat(7, 1fr); }
+    .chart-card, .member, .table-card, .headline { box-shadow: none; }
+  }
+
+  /* ── Mobile (iPhone) — desktop layout is completely unaffected ── */
+  @media (max-width: 480px) {
+    .report { padding: 0 14px 40px; }
+
+    /* Masthead */
+    .masthead { padding: 28px 0 20px; }
+    .masthead h1 { font-size: 28px; }
+    .masthead .subtitle { font-size: 13px; }
+    .masthead .meta { flex-direction: column; gap: 4px; font-size: 12px; }
+
+    /* Upload bar */
+    .upload-bar { flex-wrap: wrap; gap: 10px; }
+    .upload-bar button.load-btn {
+      width: 100%; padding: 12px; font-size: 14px; text-align: center;
+    }
+
+    /* Theme toggle — full width, easier to tap */
+    .theme-toggle { width: 100%; justify-content: center; }
+    .theme-toggle button { flex: 1; padding: 8px 0; font-size: 13px; }
+
+    /* KPI headline — 2 columns on phone, 1 column on very small */
+    .headline { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .headline .kpi-value { font-size: 22px; }
+    .headline .kpi-label { font-size: 10px; }
+
+    /* Section headers */
+    .section h2 { font-size: 18px; }
+    .section .section-sub { font-size: 12px; }
+
+    /* Member cards — 1 per row on phone */
+    .members { grid-template-columns: 1fr; gap: 10px; }
+
+    /* Charts */
+    .chart-card { padding: 14px; }
+    .chart-wrap { min-height: 220px; }
+
+    /* Donut layout — stack vertically */
+    .donut-content { flex-direction: column; align-items: center; }
+    .donut-chart-wrap { width: 180px; height: 180px; }
+    .donut-legend { width: 100%; max-width: 300px; }
+
+    /* Tables — horizontal scroll so columns don't crush */
+    .table-card {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .table-card table { min-width: 520px; }
+
+    /* Benchmark period buttons — larger tap targets */
+    .benchmark-periods { gap: 6px; }
+    .period-btn { padding: 10px 14px; font-size: 13px; }
+
+    /* Benchmark summary stats — wrap to 2 columns */
+    .benchmark-summary { gap: 14px; }
+    .bm-stat-value { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<div class="report">
+
+  <div class="upload-bar">
+    <button type="button" class="load-btn" onclick="document.getElementById('fileInput').click()">Load workbook (.xlsx)</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xlsm" />
+    <span id="priceTag" style="margin-left:auto;font-size:11px;color:var(--positive);white-space:nowrap;"></span>
+    <span id="fileInfo" class="file-info">Load "Family Portfolio Dashboard.xlsx" to refresh. Use <strong>Cmd/Ctrl + P</strong> to print or save as PDF.</span>
+    <div class="theme-toggle" role="group" aria-label="Color theme">
+      <button type="button" data-theme-set="auto" title="Match device theme">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></svg>
+        Auto
+      </button>
+      <button type="button" data-theme-set="light" title="Light mode">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        Light
+      </button>
+      <button type="button" data-theme-set="dark" title="Dark mode">
+        <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        Dark
+      </button>
+    </div>
+  </div>
+
+  <div id="content">
+    <div class="empty">
+      <strong>Family Portfolio Report</strong>
+      Load your portfolio workbook to render the report.
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── Theme management ───────────────────────────────────────────────
+// Default is "auto" (follow device preference). User can override with
+// Light / Dark via the segmented toggle in the upload bar. Pick is
+// remembered in localStorage so it survives reloads.
+const THEME_KEY = 'portfolio.theme';
+function applyTheme(pref) {
+  // pref ∈ {"auto","light","dark"}. "auto" means remove the override
+  // and let the @media (prefers-color-scheme) CSS rule decide.
+  const root = document.documentElement;
+  if (pref === 'light' || pref === 'dark') root.setAttribute('data-theme', pref);
+  else root.removeAttribute('data-theme');
+  // Reflect active state in the segmented control.
+  document.querySelectorAll('.theme-toggle button[data-theme-set]').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-theme-set') === pref);
+  });
+}
+function currentThemePref() {
+  return localStorage.getItem(THEME_KEY) || 'auto';
+}
+function setThemePref(pref) {
+  if (pref === 'auto') localStorage.removeItem(THEME_KEY);
+  else localStorage.setItem(THEME_KEY, pref);
+  applyTheme(pref);
+  // Charts cache colors at construction time, so they need a redraw.
+  if (typeof state !== 'undefined' && state.wb) rerenderChartsOnly();
+}
+// Apply theme as early as possible to avoid a light → dark flash.
+applyTheme(currentThemePref());
+// React to OS theme changes when the user is on Auto.
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (currentThemePref() === 'auto' && typeof state !== 'undefined' && state.wb) rerenderChartsOnly();
+});
+// Wire up toggle buttons once the DOM is parsed.
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.theme-toggle button[data-theme-set]').forEach(b => {
+    b.addEventListener('click', () => setThemePref(b.getAttribute('data-theme-set')));
+  });
+});
+
+// Read current theme colors from CSS variables. Charts call this at
+// construction so they pick up whichever palette is active right now.
+function themeColors() {
+  const cs = getComputedStyle(document.documentElement);
+  const v = name => cs.getPropertyValue(name).trim();
+  return {
+    bg:        v('--bg'),
+    paper:     v('--paper'),
+    ink:       v('--ink'),
+    inkSoft:   v('--ink-soft'),
+    muted:     v('--muted'),
+    line:      v('--line'),
+    lineSoft:  v('--line-soft'),
+    accent:    v('--accent'),
+    gold:      v('--gold'),
+    positive:  v('--positive'),
+    negative:  v('--negative'),
+    posBarStart: v('--pos-bar-start'),
+    posBarEnd:   v('--pos-bar-end'),
+    negBarStart: v('--neg-bar-start'),
+    negBarEnd:   v('--neg-bar-end'),
+    cashBarStart: v('--cash-bar-start'),
+    cashBarEnd:   v('--cash-bar-end'),
+  };
+}
+
+// Track live Chart.js instances so we can destroy and rebuild them
+// when the theme switches (otherwise old colors stay baked into the canvas).
+const chartInstances = [];
+function rerenderChartsOnly() {
+  if (!state.wb) return;
+  while (chartInstances.length) {
+    try { chartInstances.pop().destroy(); } catch (e) {}
+  }
+  const holdings = parseHoldings();
+  const txs = parseTransactions();
+  const perf = computePerformance(txs, holdings);
+  renderCharts(perf, holdings, txs);
+  setTimeout(() => { renderBenchmarkChart(); }, 10);
+}
+
+// Accounting-style number formatters: negatives shown in red parentheses,
+// e.g. ($1,234) instead of -$1,234. The negative wrapper uses an inline
+// color so it works in any context (KPIs, tables, member cards).
+const _NEG_OPEN  = '<span style="color:var(--negative)">(';
+const _NEG_CLOSE = ')</span>';
+const FMT_USD = v => {
+  if (v == null || isNaN(v)) return '–';
+  const n = Number(v);
+  const abs = '$' + Math.abs(n).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+  return n < 0 ? `${_NEG_OPEN}${abs}${_NEG_CLOSE}` : abs;
+};
+const FMT_USD2 = v => {
+  if (v == null || isNaN(v)) return '–';
+  const n = Number(v);
+  const abs = '$' + Math.abs(n).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  return n < 0 ? `${_NEG_OPEN}${abs}${_NEG_CLOSE}` : abs;
+};
+const FMT_PCT = v => {
+  if (v == null || isNaN(v)) return '–';
+  const pct = Number(v) * 100;
+  const abs = Math.abs(pct).toFixed(1) + '%';
+  return pct < 0 ? `${_NEG_OPEN}${abs}${_NEG_CLOSE}` : abs;
+};
+const FMT_NUM = v => {
+  if (v == null || isNaN(v)) return '–';
+  const n = Number(v);
+  const abs = Math.abs(n).toLocaleString(undefined, {maximumFractionDigits: 2});
+  return n < 0 ? `${_NEG_OPEN}${abs}${_NEG_CLOSE}` : abs;
+};
+
+// 7-member layout after the TMI split into Talal/Mohammad/Ibrahim.
+const MEMBERS = ["Madi", "Mama", "Talal", "Mohammad", "Ibrahim", "Aisha", "Sami"];
+const COLORS_MEMBER = ["#2D6A4F", "#74A57F", "#D9A441", "#C48838", "#A06B23", "#B36F4D", "#5C3D2E"];
+const COLORS_ASSET  = ["#2D6A4F", "#B8924E", "#74A57F", "#B36F4D", "#5C3D2E", "#A1A1A1"];
+
+let state = { wb: null, fileName: null };
+
+document.getElementById('fileInput').addEventListener('change', async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const buf = await f.arrayBuffer();
+  state.wb = XLSX.read(buf, { type: 'array', cellDates: true });
+  state.fileName = f.name;
+  document.getElementById('fileInfo').innerHTML = f.name + " · loaded locally · use <strong>Cmd/Ctrl + P</strong> to print";
+  await fetchLivePrices();
+  render();
+});
+
+// ── Supabase config ───────────────────────────────────────────────────────
+const SUPABASE_XLSX_URL   = 'https://hcjugujmdlzfwdfecnjt.supabase.co/storage/v1/object/public/Portfolio/Family%20Portfolio%20Dashboard.xlsx';
+const SUPABASE_PRICES_URL = 'https://hcjugujmdlzfwdfecnjt.supabase.co/functions/v1/prices';
+
+// Fetch live prices from Edge Function, store in state.livePrices
+async function fetchLivePrices() {
+  try {
+    const res = await fetch(SUPABASE_PRICES_URL);
+    if (!res.ok) return;
+    state.livePrices = await res.json();
+    const tag = document.getElementById('priceTag');
+    if (tag) tag.textContent = '● Prices live · ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  } catch {}
+}
+
+// Auto-load xlsx from Supabase on page open
+async function autoLoadFromSupabase() {
+  const info = document.getElementById('fileInfo');
+  try {
+    info.innerHTML = 'Loading portfolio from cloud…';
+    const res = await fetch(SUPABASE_XLSX_URL);
+    if (!res.ok) throw new Error('Fetch failed');
+    const buf = await res.arrayBuffer();
+    state.wb = XLSX.read(buf, { type: 'array', cellDates: true });
+    info.innerHTML = 'Live from cloud · <strong>Cmd/Ctrl + P</strong> to print or save as PDF';
+    await fetchLivePrices();
+    render();
+  } catch {
+    info.innerHTML = 'Could not load from cloud — use the button to load locally';
+  }
+}
+
+// Auto-refresh live prices every 60 seconds
+setInterval(async () => {
+  if (!state.wb) return;
+  await fetchLivePrices();
+  render();
+}, 60_000);
+
+// Kick off auto-load
+window.addEventListener('DOMContentLoaded', () => autoLoadFromSupabase());
+
+function sheetToRows(sheetName) {
+  const ws = state.wb.Sheets[sheetName];
+  if (!ws) return [];
+  // blankrows:true keeps empty rows so positional indexing works (e.g., row gaps between member blocks).
+  return XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true, blankrows: true });
+}
+
+// XIRR via Newton-Raphson
+function xirr(values, dates) {
+  if (!values || values.length < 2) return null;
+  let hasPos = false, hasNeg = false;
+  for (const v of values) {
+    if (v > 0) hasPos = true;
+    if (v < 0) hasNeg = true;
+  }
+  if (!hasPos || !hasNeg) return null;
+  const t0 = dates[0].getTime();
+  const days = dates.map(d => (d.getTime() - t0) / 86400000);
+  const npv = r => values.reduce((s, v, i) => s + v / Math.pow(1 + r, days[i] / 365), 0);
+  const dnpv = r => values.reduce((s, v, i) => s - (v * days[i] / 365) / Math.pow(1 + r, days[i] / 365 + 1), 0);
+  let r = 0.1;
+  for (let i = 0; i < 200; i++) {
+    const f = npv(r);
+    const df = dnpv(r);
+    if (Math.abs(df) < 1e-12) break;
+    const r_new = r - f / df;
+    if (!isFinite(r_new)) break;
+    if (Math.abs(r_new - r) < 1e-10) return r_new;
+    r = r_new;
+    if (r < -0.99) r = -0.5;
+    if (r > 100) r = 1;
+  }
+  return r;
+}
+
+// Robust Holdings parser: scans by member name in col B (index 1) and symbol/TOTAL in col C (index 2).
+// Independent of row offsets or blank-row preservation.
+function parseHoldings() {
+  const rows = sheetToRows("Holdings");
+  const out = { members: {}, byTicker: {}, total: null };
+  for (const m of MEMBERS) {
+    out.members[m] = { positions: [], cost: 0, mv: 0, gain: 0 };
+  }
+  for (const r of rows) {
+    if (!r) continue;
+    const member = r[1];   // col B
+    const sym    = r[2];   // col C
+    if (member === "PORTFOLIO" && sym === "TOTAL") {
+      out.total = { cost: Number(r[5] || 0), mv: Number(r[6] || 0), gain: Number(r[7] || 0), gainPct: Number(r[8] || 0) };
+      out._portfolioTotalRow = r;
+      continue;
+    }
+    if (!MEMBERS.includes(member)) continue;
+    if (sym === "TOTAL") {
+      // Will be recomputed from positions after live prices are applied
+      out.members[member]._costFromSheet = Number(r[5] || 0);
+      continue;
+    }
+    if (sym == null) continue;
+    const shares = Number(r[3] || 0);
+    const cost   = Number(r[5] || 0);
+    // Use live price if available, otherwise fall back to xlsx cached price
+    const liveP  = state.livePrices?.[sym]?.price ?? state.livePrices?.[sym + '.L']?.price;
+    const price  = liveP != null ? liveP : Number(r[4] || 0);
+    const mv     = sym === 'Cash' ? Number(r[6] || 0) : shares * price;
+    const gain   = mv - cost;
+    out.members[member].positions.push({ symbol: sym, shares, price, cost, mv, gain });
+    if (!out.byTicker[sym]) out.byTicker[sym] = { shares: 0, cost: 0, mv: 0, gain: 0, price };
+    out.byTicker[sym].shares += shares;
+    out.byTicker[sym].cost   += cost;
+    out.byTicker[sym].mv     += mv;
+    out.byTicker[sym].gain   += gain;
+    out.byTicker[sym].price   = price;
+  }
+
+  // Recompute per-member and portfolio totals using live prices
+  let portCost = 0, portMV = 0;
+  for (const m of MEMBERS) {
+    const mem = out.members[m];
+    if (!mem) continue;
+    mem.cost = mem.positions.reduce((s, p) => s + p.cost, 0);
+    mem.mv   = mem.positions.reduce((s, p) => s + p.mv,   0);
+    mem.gain = mem.mv - mem.cost;
+    portCost += mem.cost;
+    portMV   += mem.mv;
+  }
+  if (out.total) {
+    out.total.mv      = portMV;
+    out.total.cost    = portCost;
+    out.total.gain    = portMV - portCost;
+    out.total.gainPct = portCost ? (portMV - portCost) / portCost : 0;
+  }
+  return out;
+}
+
+// Robust Transactions parser: any row with a date in col B and a recognized type in col C is a transaction.
+function parseTransactions() {
+  // Per-member cash columns shift right with the 7-member layout (Madi..Sami):
+  //   5-member layout: cash cols S..W → JS idx 18..22
+  //   7-member layout: cash cols W..AC → JS idx 22..28
+  // We dynamically locate the start by scanning the per-member header row for the
+  // first MEMBERS-name cluster of MEMBERS.length consecutive cells — so the parser
+  // tolerates either layout without code changes.
+  const rows = sheetToRows("Transactions");
+  const VALID_TYPES = new Set(["Buy", "Sell", "Dividend", "Deposit", "Withdraw", "Purification", "Adjustment"]);
+
+  // Find the three section-start column indices (shares, cost, cash) by locating the
+  // per-member sub-header row and recording where each member name appears.
+  let shStart = -1, cbStart = -1, caStart = -1;
+  for (const r of rows) {
+    if (!r) continue;
+    const memberSpans = [];
+    for (let c = 0; c <= r.length - MEMBERS.length; c++) {
+      if (MEMBERS.every((m, k) => r[c + k] === m)) memberSpans.push(c);
+    }
+    if (memberSpans.length >= 3) {
+      [shStart, cbStart, caStart] = memberSpans.slice(0, 3);
+      break;
+    }
+  }
+  // Fallback to the 7-member positions if the header probe failed.
+  if (caStart < 0) { shStart = 8; cbStart = 15; caStart = 22; }
+
+  const out = [];
+  for (const r of rows) {
+    if (!r) continue;
+    if (!r[1] || !VALID_TYPES.has(r[2])) continue;
+    const cash = {};
+    for (let i = 0; i < MEMBERS.length; i++) cash[MEMBERS[i]] = r[caStart + i];
+    out.push({
+      date: r[1], type: r[2], symbol: r[3],
+      totalShares: r[4], price: r[5], totalCash: r[6], notes: r[7],
+      cash,
+    });
+  }
+  return out;
+}
+
+function computePerformance(txs, holdings) {
+  const out = { members: {}, total: { netInvested: 0, mv: 0, profit: 0, return: 0, annualized: null } };
+  for (const m of MEMBERS) {
+    let net = 0;
+    const cfValues = [];
+    const cfDates = [];
+    for (const t of txs) {
+      if (t.type !== "Deposit" && t.type !== "Withdraw") continue;
+      const v = Number(t.cash[m] || 0);
+      if (v === 0) continue;
+      net += v;
+      cfValues.push(-v);
+      cfDates.push(t.date instanceof Date ? t.date : new Date(t.date));
+    }
+    const mv = holdings.members[m]?.mv || 0;
+    cfValues.push(mv);
+    cfDates.push(new Date());
+    const profit = mv - net;
+    const ret = net !== 0 ? profit / net : 0;
+    const ann = xirr(cfValues, cfDates);
+    out.members[m] = { netInvested: net, mv, profit, return: ret, annualized: ann };
+    out.total.netInvested += net;
+    out.total.mv += mv;
+  }
+  out.total.profit = out.total.mv - out.total.netInvested;
+  out.total.return = out.total.netInvested !== 0 ? out.total.profit / out.total.netInvested : 0;
+  {
+    const vMap = new Map();
+    for (const t of txs) {
+      if (t.type !== "Deposit" && t.type !== "Withdraw") continue;
+      const dKey = (t.date instanceof Date ? t.date : new Date(t.date)).toISOString().slice(0,10);
+      if (!vMap.has(dKey)) vMap.set(dKey, 0);
+      let totalCash = 0;
+      for (const m of MEMBERS) totalCash += Number(t.cash[m] || 0);
+      vMap.set(dKey, vMap.get(dKey) + (-totalCash));
+    }
+    const sorted = [...vMap.entries()].sort();
+    const vals = sorted.map(e => e[1]);
+    const dts = sorted.map(e => new Date(e[0]));
+    vals.push(out.total.mv);
+    dts.push(new Date());
+    out.total.annualized = xirr(vals, dts);
+  }
+  return out;
+}
+
+function renderMasthead() {
+  const today = new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+  return `
+    <div class="masthead">
+      <div class="eyebrow">Performance Report</div>
+      <h1>Alkhamis Family Portfolio</h1>
+      <div class="subtitle">Sharia-compliant joint account · 5-member internal allocation</div>
+      <div class="meta">
+        <div><span class="label">As of</span>${today}</div>
+        <div><span class="label">Inception</span>February 2022</div>
+        <div><span class="label">Members</span>Madi · Mama · Talal · Mohammad · Ibrahim · Aisha · Sami</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderHeadline(perf) {
+  const t = perf.total;
+  const profitClass = t.profit >= 0 ? 'positive' : 'negative';
+  const since = ((new Date() - new Date(2022, 1, 24)) / (365.25 * 86400000)).toFixed(1);
+  const annLabel = t.annualized != null
+    ? `<span class="perf-rate">${FMT_PCT(t.annualized)} annualized</span>`
+    : `<span class="perf-rate">annualized return computing…</span>`;
+  return `
+    <div class="headline">
+      <div class="kpi">
+        <div class="kpi-label">Portfolio Value Today</div>
+        <div class="kpi-value" data-animate="usd" data-target="${t.mv}">${FMT_USD(t.mv)}</div>
+        <div class="kpi-sub">Positions + cash</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Net Cash Invested</div>
+        <div class="kpi-value" data-animate="usd" data-target="${t.netInvested}">${FMT_USD(t.netInvested)}</div>
+        <div class="kpi-sub">Lifetime deposits − withdrawals</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Total Profit</div>
+        <div class="kpi-value ${profitClass}" data-animate="usd" data-target="${t.profit}">${FMT_USD(t.profit)}</div>
+        <div class="kpi-sub">Realized + unrealized</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Return Since Inception</div>
+        <div class="kpi-value ${profitClass}" data-animate="pct" data-target="${t.return}">${FMT_PCT(t.return)}</div>
+        <div class="kpi-sub">Profit ÷ cash invested</div>
+      </div>
+    </div>
+    <div class="perf-banner">
+      Over the past <strong>${since} years</strong>, our family has invested <strong>${FMT_USD(t.netInvested)}</strong> net in this portfolio,
+      growing it to <strong>${FMT_USD(t.mv)}</strong> — a total return of <strong>${FMT_PCT(t.return)}</strong>, or ${annLabel}.
+    </div>
+  `;
+}
+
+function renderMemberCompare() {
+  return `
+    <div class="section">
+      <h2>Cash In vs. Value Today — by Member</h2>
+      <div class="section-sub">Each family member's lifetime cash contribution alongside their current slot value. The taller second bar = your money working for you.</div>
+      <div class="chart-card">
+        <div class="chart-wrap" style="height: 340px;"><canvas id="memberCompareChart"></canvas></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderMemberCards(perf) {
+  const totalMV = perf.total.mv || 1;
+  const cards = MEMBERS.map((m, i) => {
+    const p = perf.members[m];
+    const share = (p.mv / totalMV) * 100;
+    const profitClass = p.profit >= 0 ? '' : 'negative';
+    return `
+      <div class="member" style="border-top: 3px solid ${COLORS_MEMBER[i]}">
+        <div class="name">${m}</div>
+        <div class="row"><span class="label">Cash Invested</span><span class="value">${FMT_USD(p.netInvested)}</span></div>
+        <div class="row"><span class="label">Current Value</span><span class="value">${FMT_USD(p.mv)}</span></div>
+        <div class="row"><span class="label">Share of Portfolio</span><span class="value">${share.toFixed(1)}%</span></div>
+        <div class="row headline-row">
+          <span class="label">Profit</span>
+          <span class="value ${profitClass}">${FMT_USD(p.profit)}</span>
+        </div>
+        <div class="row"><span class="label">Return %</span><span class="value ${profitClass}">${FMT_PCT(p.return)}</span></div>
+        <div class="row"><span class="label">Annualized</span><span class="value ${profitClass}">${p.annualized != null ? FMT_PCT(p.annualized) : '–'}</span></div>
+      </div>
+    `;
+  }).join('');
+  return `
+    <div class="section">
+      <h2>By Family Member</h2>
+      <div class="section-sub">Internal allocation of the joint IBKR account, with each member's stake, contribution, and performance.</div>
+      <div class="members">${cards}</div>
+    </div>
+  `;
+}
+
+function renderAllocation() {
+  return `
+    <div class="two-col">
+      <div class="chart-card">
+        <h3>Allocation by Member</h3>
+        <div class="donut-content">
+          <div class="donut-chart-wrap"><canvas id="memberChart"></canvas></div>
+          <ul class="donut-legend" id="memberLegend"></ul>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Allocation by Holding</h3>
+        <div class="donut-content">
+          <div class="donut-chart-wrap"><canvas id="positionChart"></canvas></div>
+          <ul class="donut-legend" id="positionLegend"></ul>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <h2>Unrealized P/L by Holding</h2>
+      <div class="section-sub">Current paper gain or loss on each position, vs. the price you paid.</div>
+      <div class="chart-card">
+        <div class="chart-wrap" style="height: 260px;"><canvas id="plChart"></canvas></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderHoldings(holdings) {
+  const total = holdings.total?.mv || 1;
+  const tickers = Object.entries(holdings.byTicker)
+    .filter(([k, v]) => Math.abs(v.mv || 0) > 0.01)
+    .sort((a, b) => (b[1].mv || 0) - (a[1].mv || 0));
+  const rows = tickers.map(([sym, v]) => {
+    const gain = v.gain || 0;
+    const cost = v.cost || 0;
+    const gainPct = (sym !== 'Cash' && cost) ? gain / cost : null;
+    const cls = gain >= 0 ? 'pos' : 'neg';
+    return `<tr>
+      <td><strong>${sym}</strong></td>
+      <td class="num">${sym === 'Cash' ? '–' : FMT_NUM(v.shares)}</td>
+      <td class="num">${sym === 'Cash' ? '–' : FMT_USD2(v.price)}</td>
+      <td class="num">${FMT_USD2(v.mv)}</td>
+      <td class="num ${cls}">${sym === 'Cash' ? '–' : FMT_USD2(gain)}</td>
+      <td class="num ${cls}">${gainPct == null ? '–' : FMT_PCT(gainPct)}</td>
+      <td class="num">${FMT_PCT(v.mv / total)}</td>
+    </tr>`;
+  }).join('');
+  const totalCost = holdings.total?.cost || 0;
+  const totalGain = holdings.total?.gain || 0;
+  const totalGainPct = totalCost ? totalGain / totalCost : null;
+  const totalCls = totalGain >= 0 ? 'pos' : 'neg';
+  return `
+    <div class="section">
+      <h2>What We Own</h2>
+      <div class="section-sub">Current positions across the portfolio.</div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Symbol</th><th class="num">Shares</th><th class="num">Price</th><th class="num">Market Value</th><th class="num">Unrealized P/L</th><th class="num">% G/L</th><th class="num">Weight</th></tr></thead>
+          <tbody>${rows}
+            <tr class="total">
+              <td>Total</td><td></td><td></td>
+              <td class="num">${FMT_USD2(holdings.total?.mv || 0)}</td>
+              <td class="num ${totalCls}">${FMT_USD2(totalGain)}</td>
+              <td class="num ${totalCls}">${totalGainPct == null ? '–' : FMT_PCT(totalGainPct)}</td>
+              <td class="num">100.0%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderFooter() {
+  const today = new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+  return `<footer>
+    Generated ${today} from the Family Portfolio workbook.<br>
+    Performance metrics are calculated since inception using the full transaction log. Annualized returns use XIRR (money-weighted).
+  </footer>`;
+}
+
+// Donut center plugin: float total value in the donut hole
+const donutCenterPlugin = {
+  id: 'donutCenter',
+  beforeDraw(chart) {
+    const opts = chart.options.plugins?.donutCenter;
+    if (!opts || !opts.enabled) return;
+    const { ctx, chartArea } = chart;
+    const tc = themeColors();
+    const total = chart.data.datasets[0].data.reduce((a, b) => a + (Number(b) || 0), 0);
+    const cx = (chartArea.left + chartArea.right) / 2;
+    const cy = (chartArea.top + chartArea.bottom) / 2;
+    ctx.save();
+    ctx.fillStyle = tc.muted;
+    ctx.font = '600 10px ' + (opts.bodyFont || '"Helvetica Neue", Arial, sans-serif');
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.letterSpacing = '1.5px';
+    ctx.fillText('TOTAL VALUE', cx, cy - 18);
+    ctx.fillStyle = tc.ink;
+    ctx.font = '700 24px "Playfair Display", Georgia, serif';
+    ctx.fillText('$' + Math.round(total).toLocaleString(), cx, cy + 8);
+    ctx.restore();
+  }
+};
+
+// Build a vertical gradient for a chart, top→bottom (used by stacked bars)
+function makeVerticalGradient(ctx, chartArea, top, bottom) {
+  if (!chartArea) return top;
+  const g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+  g.addColorStop(0, top); g.addColorStop(1, bottom);
+  return g;
+}
+// Build a horizontal gradient for a chart, left→right (for horizontal bars)
+function makeHorizontalGradient(ctx, chartArea, start, end) {
+  if (!chartArea) return start;
+  const g = ctx.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+  g.addColorStop(0, start); g.addColorStop(1, end);
+  return g;
+}
+
+// Count-up animation for headline KPIs
+function animateNumber(el, target, duration, formatter) {
+  // innerHTML so the negative-parens span from the formatters renders styled
+  const t0 = performance.now();
+  function tick(now) {
+    const p = Math.min((now - t0) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+    el.innerHTML = formatter(target * eased);
+    if (p < 1) requestAnimationFrame(tick);
+    else el.innerHTML = formatter(target);
+  }
+  requestAnimationFrame(tick);
+}
+
+// Custom plugin: draw % labels OUTSIDE the donut with a short leader line in the slice's color.
+const sliceLabelsPlugin = {
+  id: 'sliceLabels',
+  afterDatasetsDraw(chart) {
+    const { ctx, data } = chart;
+    const dataset = data.datasets[0];
+    const total = dataset.data.reduce((a, b) => a + (Number(b) || 0), 0);
+    if (!total) return;
+    const meta = chart.getDatasetMeta(0);
+    meta.data.forEach((arc, i) => {
+      const value = Number(dataset.data[i]) || 0;
+      const pct = (value / total) * 100;
+      if (pct < 1.5) return;   // skip slivers
+      const midAngle = (arc.startAngle + arc.endAngle) / 2;
+      const cosA = Math.cos(midAngle), sinA = Math.sin(midAngle);
+      const innerEdgeX = arc.x + cosA * arc.outerRadius;
+      const innerEdgeY = arc.y + sinA * arc.outerRadius;
+      const elbowX = arc.x + cosA * (arc.outerRadius + 12);
+      const elbowY = arc.y + sinA * (arc.outerRadius + 12);
+      const onRight = cosA >= 0;
+      const labelX = elbowX + (onRight ? 8 : -8);
+      const labelY = elbowY;
+      const color = Array.isArray(dataset.backgroundColor) ? dataset.backgroundColor[i] : dataset.backgroundColor;
+      ctx.save();
+      // Leader line in slice color
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(innerEdgeX, innerEdgeY);
+      ctx.lineTo(elbowX, elbowY);
+      ctx.stroke();
+      // Percentage text
+      ctx.fillStyle = themeColors().ink;
+      ctx.font = 'bold 12px -apple-system, "Helvetica Neue", Arial, sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = onRight ? 'left' : 'right';
+      ctx.fillText(pct.toFixed(1) + '%', labelX, labelY);
+      ctx.restore();
+    });
+  }
+};
+
+// Custom plugin: draw $ value at the end of each horizontal bar
+const barValueLabelsPlugin = {
+  id: 'barValueLabels',
+  afterDatasetsDraw(chart) {
+    const { ctx, data, scales } = chart;
+    const dataset = data.datasets[0];
+    const meta = chart.getDatasetMeta(0);
+    meta.data.forEach((bar, i) => {
+      const value = Number(dataset.data[i]) || 0;
+      const label = (value >= 0 ? '+$' : '-$') + Math.abs(value).toLocaleString(undefined, { maximumFractionDigits: 0 });
+      ctx.save();
+      ctx.fillStyle = themeColors().ink;
+      ctx.font = 'bold 12px -apple-system, "Helvetica Neue", Arial, sans-serif';
+      ctx.textBaseline = 'middle';
+      if (value >= 0) {
+        ctx.textAlign = 'left';
+        ctx.fillText('  ' + label, bar.x, bar.y);
+      } else {
+        ctx.textAlign = 'right';
+        ctx.fillText(label + '  ', bar.x, bar.y);
+      }
+      ctx.restore();
+    });
+  }
+};
+
+function renderCharts(perf, holdings, txs) {
+  setTimeout(() => {
+    // Render an HTML legend next to a donut canvas. CSS handles all the layout
+    // and resize behavior — no Chart.js layout recalculation involved.
+    function renderHtmlLegend(legendEl, labels, data, colors) {
+      if (!legendEl) return;
+      const total = data.reduce((a, b) => a + (Number(b) || 0), 0);
+      legendEl.innerHTML = labels.map((label, i) => {
+        const v = Number(data[i]) || 0;
+        const pct = total ? (v / total) * 100 : 0;
+        const color = Array.isArray(colors) ? colors[i] : colors;
+        return `<li>
+          <span class="swatch" style="background:${color}"></span>
+          <span class="legend-label">${label}</span>
+          <span class="legend-pct">${pct.toFixed(1)}%</span>
+        </li>`;
+      }).join('');
+    }
+
+    const donutOptions = {
+      maintainAspectRatio: false,
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const v = ctx.parsed;
+              const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+              const pct = total ? (v / total) * 100 : 0;
+              return `${ctx.label}: $${v.toLocaleString(undefined, {maximumFractionDigits:0})} (${pct.toFixed(1)}%)`;
+            }
+          }
+        }
+      },
+      cutout: '68%',
+      layout: { padding: { left: 4, right: 4, top: 8, bottom: 8 } },
+      animation: { animateRotate: true, animateScale: false, duration: 900, easing: 'easeOutQuart' }
+    };
+    // Enable the donut-center value display
+    donutOptions.plugins.donutCenter = { enabled: true };
+    const tc = themeColors();
+    const memCtx = document.getElementById('memberChart');
+    if (memCtx) {
+      const memberData = MEMBERS.map(m => perf.members[m].mv || 0);
+      chartInstances.push(new Chart(memCtx, {
+        type: 'doughnut',
+        data: {
+          labels: MEMBERS,
+          datasets: [{
+            data: memberData,
+            backgroundColor: COLORS_MEMBER, borderWidth: 2, borderColor: tc.paper
+          }]
+        },
+        options: donutOptions,
+        plugins: [donutCenterPlugin]
+      }));
+      renderHtmlLegend(document.getElementById('memberLegend'), MEMBERS, memberData, COLORS_MEMBER);
+    }
+    const posCtx = document.getElementById('positionChart');
+    if (posCtx) {
+      const tickers = Object.entries(holdings.byTicker)
+        .filter(([k, v]) => Math.abs(v.mv || 0) > 0.01)
+        .sort((a, b) => (b[1].mv || 0) - (a[1].mv || 0));
+      const posLabels = tickers.map(t => t[0]);
+      const posData = tickers.map(t => t[1].mv);
+      const posColors = COLORS_ASSET.slice(0, posLabels.length);
+      chartInstances.push(new Chart(posCtx, {
+        type: 'doughnut',
+        data: {
+          labels: posLabels,
+          datasets: [{
+            data: posData,
+            backgroundColor: posColors, borderWidth: 2, borderColor: tc.paper
+          }]
+        },
+        options: donutOptions,
+        plugins: [donutCenterPlugin]
+      }));
+      renderHtmlLegend(document.getElementById('positionLegend'), posLabels, posData, posColors);
+    }
+    // Unrealized P/L horizontal bar
+    const plCtx = document.getElementById('plChart');
+    if (plCtx) {
+      const tickers = Object.entries(holdings.byTicker)
+        .filter(([k, v]) => k !== 'Cash' && Math.abs(v.mv || 0) > 0.01)
+        .sort((a, b) => (b[1].gain || 0) - (a[1].gain || 0));
+      // Asymmetric, data-driven x-axis on a $5,000 grid. The axis extends to
+      // two tick-steps beyond the largest gain (and below the largest loss),
+      // so a +$32,475 gain stretches to a $40K tick and a -$200 loss extends
+      // the negative side to -$10K. Gridlines stay subtle (lineSoft for ticks,
+      // muted for zero) and render behind the bars for a clean look. Sides
+      // with no bars collapse to a thin gutter.
+      const gains = tickers.map(t => t[1].gain || 0);
+      const posMax = Math.max(0, ...gains);
+      const negMin = Math.min(0, ...gains);
+      const hasPos = posMax > 0;
+      const hasNeg = negMin < 0;
+      const STEP = 5000;
+      const xMax = hasPos ? Math.floor(posMax / STEP) * STEP + 2 * STEP : 0;
+      const xMin = hasNeg ? Math.ceil(negMin / STEP)  * STEP - 2 * STEP : 0;
+      const padLeft  = hasNeg ? 20 : 8;
+      const padRight = hasPos ? 20 : 8;
+      const plTc = themeColors();
+      chartInstances.push(new Chart(plCtx, {
+        type: 'bar',
+        data: {
+          labels: tickers.map(t => t[0]),
+          datasets: [{
+            data: tickers.map(t => t[1].gain || 0),
+            backgroundColor: function(c) {
+              const chart = c.chart; const { ctx, chartArea } = chart;
+              if (!chartArea) return plTc.positive;
+              const v = tickers[c.dataIndex]?.[1]?.gain || 0;
+              return v >= 0
+                ? makeHorizontalGradient(ctx, chartArea, plTc.posBarStart, plTc.posBarEnd)
+                : makeHorizontalGradient(ctx, chartArea, plTc.negBarStart, plTc.negBarEnd);
+            },
+            borderWidth: 0,
+            borderRadius: 4,
+            barThickness: 28
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const v = ctx.parsed.x;
+                  const t = holdings.byTicker[ctx.label];
+                  const pct = t.cost ? (v / t.cost) * 100 : 0;
+                  const dollarStr = v >= 0
+                    ? '+$' + v.toLocaleString(undefined, {maximumFractionDigits:0})
+                    : '($' + Math.abs(v).toLocaleString(undefined, {maximumFractionDigits:0}) + ')';
+                  const pctStr = pct >= 0
+                    ? '+' + pct.toFixed(1) + '%'
+                    : '(' + Math.abs(pct).toFixed(1) + '%)';
+                  return `${ctx.label}: ${dollarStr} (${pctStr})`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              min: xMin, max: xMax,
+              grid: { color: (ctx) => ctx.tick.value === 0 ? plTc.muted : plTc.lineSoft },
+              ticks: {
+                stepSize: STEP,
+                callback: (v) => '$' + v.toLocaleString(undefined, {maximumFractionDigits:0}),
+                font: { size: 11 },
+                color: plTc.muted
+              }
+            },
+            y: { grid: { display: false }, ticks: { font: { size: 13, weight: 'bold' }, color: plTc.ink } }
+          },
+          layout: { padding: { right: padRight, left: padLeft } }
+        },
+        // Custom inline plugin: two-line label ($ on top, % beneath in muted grey) at the bar end.
+        // Defined here for closure access to `tickers` (for cost-basis lookup → percentage).
+        // Negatives use accounting style: red parentheses, e.g. ($1,234) / (4.5%).
+        plugins: [{
+          id: 'plBarLabels',
+          afterDatasetsDraw(chart) {
+            const { ctx, data } = chart;
+            const tcLbl = themeColors();
+            const meta = chart.getDatasetMeta(0);
+            meta.data.forEach((bar, i) => {
+              const value = Number(data.datasets[0].data[i]) || 0;
+              const cost = tickers[i]?.[1]?.cost || 0;
+              const pct = cost ? (value / cost) * 100 : 0;
+              const dollarStr = value >= 0
+                ? '+$' + value.toLocaleString(undefined, { maximumFractionDigits: 0 })
+                : '($' + Math.abs(value).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ')';
+              const pctStr = pct >= 0
+                ? '+' + pct.toFixed(1) + '%'
+                : '(' + Math.abs(pct).toFixed(1) + '%)';
+              const x = bar.x + (value >= 0 ? 8 : -8);
+              const align = value >= 0 ? 'left' : 'right';
+              ctx.save();
+              ctx.textAlign = align;
+              // $ value on top — ink for positive, accounting red for negative
+              ctx.fillStyle = value >= 0 ? tcLbl.ink : tcLbl.negative;
+              ctx.font = 'bold 12px -apple-system, "Helvetica Neue", Arial, sans-serif';
+              ctx.textBaseline = 'alphabetic';
+              ctx.fillText(dollarStr, x, bar.y - 1);
+              // % below — muted for positive, softer red for negative
+              ctx.fillStyle = pct >= 0 ? tcLbl.muted : tcLbl.negative;
+              ctx.font = '500 10.5px -apple-system, "Helvetica Neue", Arial, sans-serif';
+              ctx.textBaseline = 'top';
+              ctx.fillText(pctStr, x, bar.y + 3);
+              ctx.restore();
+            });
+          }
+        }]
+      }));
+    }
+
+    // ─── Member: stacked horizontal bar (Cash Invested + Growth = Current Value) ───
+    const compareCtx = document.getElementById('memberCompareChart');
+    if (compareCtx) {
+      // Format helpers: full $X,XXX when there's room; compact $X.XK for narrow segments.
+      const fmtFull = v => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      const fmtCompact = v => {
+        const a = Math.abs(v);
+        if (a >= 10000) return '$' + Math.round(a / 1000) + 'K';
+        if (a >= 1000)  return '$' + (a / 1000).toFixed(1) + 'K';
+        return '$' + Math.round(a);
+      };
+      // Label each segment with its $ value inside (white text), and the total at the bar end.
+      // Wide segments → full format. Medium → compact $X.XK. Tiny segments fall through to the
+      // bar-end label (which adds the breakdown so Madi/Mama still get their numbers shown).
+      const stackedLabelsPlugin = {
+        id: 'stackedLabels',
+        afterDatasetsDraw(chart) {
+          const { ctx, data, scales } = chart;
+          const tcSL = themeColors();
+          const x0 = scales.x.getPixelForValue(0);
+          data.datasets.forEach((ds, di) => {
+            const meta = chart.getDatasetMeta(di);
+            meta.data.forEach((bar, i) => {
+              const v = Number(ds.data[i]) || 0;
+              if (v <= 0) return;
+              let segStart;
+              if (di === 0) segStart = x0;
+              else segStart = chart.getDatasetMeta(di - 1).data[i].x;
+              const segWidth = bar.x - segStart;
+              const sign = di === 1 ? '+' : '';
+              let text = null;
+              if (segWidth >= 58) text = sign + fmtFull(v);
+              else if (segWidth >= 28) text = sign + fmtCompact(v);
+              if (!text) return;   // segment too narrow even for compact label
+              const centerX = (segStart + bar.x) / 2;
+              ctx.save();
+              ctx.fillStyle = 'white';
+              ctx.font = 'bold 11px -apple-system, "Helvetica Neue", Arial, sans-serif';
+              ctx.textBaseline = 'middle';
+              ctx.textAlign = 'center';
+              ctx.fillText(text, centerX, bar.y);
+              ctx.restore();
+            });
+          });
+          // Total label at end of bar. For very narrow bars we also append a compact
+          // breakdown so Madi/Mama always have their numbers visible somewhere.
+          const lastMeta = chart.getDatasetMeta(data.datasets.length - 1);
+          lastMeta.data.forEach((bar, i) => {
+            const cash = Number(data.datasets[0].data[i]) || 0;
+            const growth = Number(data.datasets[1]?.data[i]) || 0;
+            const total = cash + growth;
+            // Check if EITHER segment was too small to get an inline label (under 28px).
+            // If so, append the breakdown to the bar-end label.
+            const x0 = scales.x.getPixelForValue(0);
+            const cashEnd = chart.getDatasetMeta(0).data[i].x;
+            const cashSegWidth  = cashEnd - x0;
+            const growthSegWidth = bar.x - cashEnd;
+            const cashHidden   = cashSegWidth   < 28;
+            const growthHidden = growthSegWidth < 28;
+
+            ctx.save();
+            ctx.fillStyle = tcSL.ink;
+            ctx.font = 'bold 12px -apple-system, "Helvetica Neue", Arial, sans-serif';
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'left';
+            const totalText = '  $' + total.toLocaleString(undefined, { maximumFractionDigits: 0 });
+            ctx.fillText(totalText, bar.x, bar.y);
+            // Append compact breakdown only when an inline label was skipped
+            if (cashHidden || growthHidden) {
+              const totalWidth = ctx.measureText(totalText).width;
+              const cashStr = fmtCompact(cash);
+              const growthStr = '+' + fmtCompact(growth);
+              const breakdown = `   (${cashStr} in, ${growthStr})`;
+              ctx.fillStyle = tcSL.muted;
+              ctx.font = '500 11px -apple-system, "Helvetica Neue", Arial, sans-serif';
+              ctx.fillText(breakdown, bar.x + totalWidth, bar.y);
+            }
+            ctx.restore();
+          });
+        }
+      };
+      const cmpTc = themeColors();
+      chartInstances.push(new Chart(compareCtx, {
+        type: 'bar',
+        data: {
+          labels: MEMBERS,
+          datasets: [
+            {
+              label: 'Cash Invested',
+              data: MEMBERS.map(m => perf.members[m].netInvested || 0),
+              backgroundColor: function(c) {
+                const { ctx, chartArea } = c.chart;
+                return makeHorizontalGradient(ctx, chartArea, cmpTc.cashBarStart, cmpTc.cashBarEnd);
+              },
+              borderWidth: 0
+            },
+            {
+              label: 'Growth',
+              data: MEMBERS.map(m => (perf.members[m].mv || 0) - (perf.members[m].netInvested || 0)),
+              backgroundColor: function(c) {
+                const { ctx, chartArea } = c.chart;
+                return makeHorizontalGradient(ctx, chartArea, cmpTc.posBarStart, cmpTc.posBarEnd);
+              },
+              borderWidth: 0
+            }
+          ]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 12, boxWidth: 14, color: cmpTc.ink } },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: $${Number(ctx.parsed.x).toLocaleString(undefined, {maximumFractionDigits: 0})}`,
+                footer: (items) => {
+                  const i = items[0].dataIndex;
+                  const total = items[0].chart.data.datasets.reduce((s, ds) => s + (Number(ds.data[i]) || 0), 0);
+                  return 'Total value: $' + total.toLocaleString(undefined, {maximumFractionDigits: 0});
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              stacked: true,
+              ticks: { callback: (v) => '$' + Number(v).toLocaleString(undefined, {maximumFractionDigits: 0}), font: { size: 11 }, color: cmpTc.muted },
+              grid: { color: cmpTc.lineSoft }
+            },
+            y: {
+              stacked: true,
+              ticks: { font: { size: 13, weight: 'bold' }, color: cmpTc.ink },
+              grid: { display: false }
+            }
+          },
+          layout: { padding: { right: 90 } }
+        },
+        plugins: [stackedLabelsPlugin]
+      }));
+    }
+  }, 60);
+}
+
+
+const BENCHMARK_DATES = ["2022-02-22", "2022-02-28", "2022-03-07", "2022-03-14", "2022-03-21", "2022-03-28", "2022-04-04", "2022-04-11", "2022-04-18", "2022-04-25", "2022-05-02", "2022-05-09", "2022-05-16", "2022-05-23", "2022-05-31", "2022-06-06", "2022-06-13", "2022-06-21", "2022-06-27", "2022-07-05", "2022-07-11", "2022-07-18", "2022-07-25", "2022-08-01", "2022-08-08", "2022-08-15", "2022-08-22", "2022-08-29", "2022-09-06", "2022-09-12", "2022-09-19", "2022-09-26", "2022-10-03", "2022-10-10", "2022-10-17", "2022-10-24", "2022-10-31", "2022-11-07", "2022-11-14", "2022-11-21", "2022-11-28", "2022-12-05", "2022-12-12", "2022-12-19", "2022-12-27", "2023-01-03", "2023-01-09", "2023-01-17", "2023-01-23", "2023-01-30", "2023-02-06", "2023-02-13", "2023-02-21", "2023-02-27", "2023-03-06", "2023-03-13", "2023-03-20", "2023-03-27", "2023-04-03", "2023-04-10", "2023-04-17", "2023-04-24", "2023-05-01", "2023-05-08", "2023-05-15", "2023-05-22", "2023-05-30", "2023-06-05", "2023-06-12", "2023-06-20", "2023-06-26", "2023-07-03", "2023-07-10", "2023-07-17", "2023-07-24", "2023-07-31", "2023-08-07", "2023-08-14", "2023-08-21", "2023-08-28", "2023-09-05", "2023-09-11", "2023-09-18", "2023-09-25", "2023-10-02", "2023-10-09", "2023-10-16", "2023-10-23", "2023-10-30", "2023-11-06", "2023-11-13", "2023-11-20", "2023-11-27", "2023-12-04", "2023-12-11", "2023-12-18", "2023-12-26", "2024-01-02", "2024-01-08", "2024-01-16", "2024-01-22", "2024-01-29", "2024-02-05", "2024-02-12", "2024-02-20", "2024-02-26", "2024-03-04", "2024-03-11", "2024-03-18", "2024-03-25", "2024-04-01", "2024-04-08", "2024-04-15", "2024-04-22", "2024-04-29", "2024-05-06", "2024-05-13", "2024-05-20", "2024-05-28", "2024-06-03", "2024-06-10", "2024-06-17", "2024-06-24", "2024-07-01", "2024-07-08", "2024-07-15", "2024-07-22", "2024-07-29", "2024-08-05", "2024-08-12", "2024-08-19", "2024-08-26", "2024-09-03", "2024-09-09", "2024-09-16", "2024-09-23", "2024-09-30", "2024-10-07", "2024-10-14", "2024-10-21", "2024-10-28", "2024-11-04", "2024-11-11", "2024-11-18", "2024-11-25", "2024-12-02", "2024-12-09", "2024-12-16", "2024-12-23", "2024-12-30", "2025-01-06", "2025-01-13", "2025-01-21", "2025-01-27", "2025-02-03", "2025-02-10", "2025-02-18", "2025-02-24", "2025-03-03", "2025-03-10", "2025-03-17", "2025-03-24", "2025-03-31", "2025-04-07", "2025-04-14", "2025-04-21", "2025-04-28", "2025-05-05", "2025-05-12", "2025-05-19", "2025-05-27", "2025-06-02", "2025-06-09", "2025-06-16", "2025-06-23", "2025-06-30", "2025-07-07", "2025-07-14", "2025-07-21", "2025-07-28", "2025-08-04", "2025-08-11", "2025-08-18", "2025-08-25", "2025-09-02", "2025-09-08", "2025-09-15", "2025-09-22", "2025-09-29", "2025-10-06", "2025-10-13", "2025-10-20", "2025-10-27", "2025-11-03", "2025-11-10", "2025-11-17", "2025-11-24", "2025-12-01", "2025-12-08", "2025-12-15", "2025-12-22", "2025-12-29", "2026-01-05", "2026-01-12", "2026-01-20", "2026-01-26", "2026-02-02", "2026-02-09", "2026-02-17", "2026-02-23", "2026-03-02", "2026-03-09", "2026-03-16", "2026-03-23", "2026-03-30", "2026-04-06", "2026-04-13", "2026-04-20", "2026-04-27", "2026-05-04", "2026-05-11", "2026-05-18", "2026-05-26", "2026-06-01"];
+const BENCHMARK_PORT  = [100.0, 100.49, 97.95, 101.96, 104.13, 103.72, 102.55, 100.54, 97.98, 96.0, 95.54, 92.97, 90.93, 95.44, 94.52, 91.32, 87.0, 91.31, 88.86, 90.13, 88.8, 90.79, 94.6, 95.05, 97.42, 95.8, 92.35, 89.23, 91.88, 87.76, 84.61, 83.13, 84.33, 82.33, 85.26, 87.42, 84.96, 90.69, 90.09, 90.91, 92.56, 90.17, 88.81, 88.25, 88.41, 89.3, 91.86, 91.92, 93.78, 95.02, 94.09, 93.51, 91.1, 93.55, 91.23, 95.01, 96.27, 98.58, 98.88, 99.21, 98.73, 99.95, 100.12, 100.12, 101.36, 102.11, 103.32, 103.48, 106.16, 104.62, 106.17, 105.15, 107.66, 107.81, 109.08, 106.12, 104.98, 103.4, 104.79, 107.64, 106.0, 105.53, 103.06, 101.91, 102.78, 103.98, 102.47, 100.43, 104.58, 105.57, 107.85, 108.86, 109.79, 109.36, 111.43, 112.57, 112.94, 110.63, 113.26, 114.81, 115.18, 116.7, 118.67, 117.36, 119.44, 121.22, 121.83, 121.3, 124.06, 124.26, 124.8, 124.42, 120.41, 123.12, 123.39, 125.49, 127.99, 127.74, 126.71, 128.44, 132.03, 132.23, 132.13, 135.87, 136.71, 132.82, 130.67, 128.58, 128.76, 134.42, 135.76, 135.05, 129.61, 135.65, 137.8, 139.1, 138.81, 140.27, 141.62, 141.53, 139.34, 143.81, 138.76, 142.02, 142.62, 144.9, 145.45, 143.38, 144.13, 143.67, 142.43, 144.79, 147.68, 145.75, 145.38, 147.74, 146.65, 142.91, 140.59, 138.49, 138.94, 137.2, 127.35, 134.99, 134.0, 139.44, 141.55, 142.17, 147.24, 146.5, 147.66, 149.86, 151.4, 150.09, 153.55, 156.11, 156.68, 157.53, 159.45, 157.28, 161.18, 161.23, 161.71, 162.48, 164.69, 168.46, 170.46, 171.43, 175.45, 173.77, 179.04, 180.06, 181.24, 177.73, 179.87, 176.67, 183.15, 183.56, 183.07, 183.93, 188.21, 184.37, 187.45, 188.26, 192.91, 191.33, 192.44, 192.09, 194.28, 195.16, 190.72, 187.56, 178.63, 175.91, 181.93, 187.99, 197.27, 198.14, 198.3, 205.75, 205.99, 208.23, 214.07, 220.27];
+const BENCHMARK_SPY   = [100.0, 98.73, 95.96, 101.55, 103.41, 103.47, 102.24, 100.01, 97.32, 94.12, 93.97, 91.77, 89.01, 94.86, 93.78, 89.05, 83.58, 89.11, 87.09, 88.79, 87.98, 90.25, 94.12, 94.45, 97.57, 96.43, 92.59, 89.6, 92.88, 88.08, 84.05, 81.59, 82.88, 81.7, 85.5, 88.87, 85.97, 91.04, 90.47, 91.91, 92.95, 89.84, 87.55, 87.47, 87.36, 88.65, 91.03, 90.44, 92.67, 94.2, 93.21, 93.03, 90.55, 92.33, 88.16, 89.09, 90.41, 93.52, 93.48, 94.22, 94.16, 95.02, 94.26, 94.02, 95.63, 95.95, 97.75, 98.21, 100.39, 98.96, 101.26, 100.18, 102.63, 103.3, 104.38, 102.07, 101.8, 99.71, 100.51, 103.07, 101.77, 101.28, 98.33, 97.65, 98.12, 98.57, 96.22, 93.82, 99.3, 100.65, 102.98, 104.01, 104.88, 105.13, 107.21, 108.2, 108.58, 106.89, 108.89, 110.21, 111.34, 112.93, 114.49, 114.11, 116.01, 117.16, 116.9, 116.47, 119.07, 119.49, 118.43, 116.7, 113.11, 116.11, 116.8, 118.98, 120.95, 120.95, 120.47, 121.99, 123.99, 124.39, 124.32, 126.7, 127.92, 125.41, 124.37, 121.74, 121.76, 126.63, 128.41, 128.77, 123.44, 128.39, 129.81, 130.55, 130.89, 132.4, 133.54, 132.28, 130.45, 136.65, 133.81, 136.04, 137.65, 138.85, 138.03, 135.04, 135.92, 135.23, 132.61, 136.51, 138.89, 137.48, 137.24, 139.28, 137.05, 135.74, 131.56, 128.57, 128.84, 126.94, 115.43, 121.97, 120.25, 125.79, 129.47, 128.92, 135.74, 132.29, 134.64, 136.87, 136.38, 135.76, 140.47, 142.85, 142.46, 143.36, 145.54, 142.03, 145.56, 146.99, 147.42, 147.36, 147.86, 150.18, 151.62, 151.19, 152.87, 149.18, 151.77, 154.71, 155.81, 153.28, 153.5, 150.55, 156.11, 156.64, 155.74, 155.47, 157.7, 156.06, 158.55, 158.0, 157.45, 158.07, 157.77, 155.74, 157.49, 156.71, 153.6, 151.29, 148.16, 144.85, 149.82, 155.22, 162.23, 163.09, 164.63, 168.5, 168.86, 170.33, 172.81, 173.52];
+const BENCHMARK_SPUS = [100.0, 99.4, 95.82, 102.11, 104.38, 104.38, 102.47, 99.4, 96.69, 94.69, 94.35, 92.15, 88.9, 94.65, 93.52, 88.97, 83.89, 89.74, 86.83, 89.54, 88.4, 90.71, 95.09, 95.49, 98.13, 96.93, 92.55, 88.9, 92.28, 87.6, 83.96, 81.72, 82.72, 80.98, 84.59, 87.6, 83.79, 89.87, 89.41, 90.41, 91.84, 88.77, 87.03, 86.2, 86.0, 86.43, 88.9, 88.9, 91.34, 93.98, 92.78, 92.38, 89.74, 92.21, 88.94, 92.15, 93.82, 96.93, 96.72, 97.19, 96.93, 98.43, 98.2, 98.3, 100.5, 101.94, 103.51, 103.54, 107.12, 105.72, 107.72, 106.32, 109.12, 109.19, 110.9, 107.32, 106.28, 104.61, 106.02, 109.32, 107.52, 106.85, 103.58, 103.34, 104.78, 104.75, 101.94, 98.8, 104.48, 106.72, 108.96, 109.96, 110.03, 110.59, 113.07, 113.97, 114.3, 111.6, 114.97, 117.31, 117.98, 119.69, 122.43, 120.92, 123.26, 124.83, 124.1, 123.73, 127.24, 126.57, 125.6, 124.8, 118.82, 123.13, 124.13, 125.87, 128.28, 129.31, 128.07, 130.98, 134.96, 135.39, 135.23, 139.07, 139.77, 134.93, 132.32, 128.74, 129.11, 135.23, 136.97, 136.16, 129.14, 135.63, 137.83, 139.04, 138.67, 140.51, 141.24, 140.74, 138.03, 144.69, 140.07, 142.01, 143.52, 146.99, 147.46, 145.15, 146.26, 145.29, 142.81, 145.72, 148.36, 145.35, 143.92, 146.59, 144.35, 140.78, 136.83, 132.89, 132.89, 129.61, 117.45, 124.26, 121.52, 128.91, 132.85, 132.12, 140.98, 137.27, 139.84, 142.45, 142.51, 141.91, 147.99, 150.3, 150.67, 151.94, 154.65, 151.47, 155.92, 156.95, 157.02, 156.72, 157.32, 161.46, 163.44, 163.37, 166.71, 162.47, 165.88, 169.22, 172.43, 167.78, 169.25, 165.37, 171.46, 172.23, 169.99, 170.49, 172.96, 171.19, 172.36, 172.23, 171.82, 171.99, 171.69, 169.92, 171.76, 170.22, 166.21, 164.3, 160.96, 157.19, 162.47, 168.42, 177.81, 179.81, 180.82, 188.0, 189.64, 191.28, 195.66, 198.9];
+const BENCHMARK_QQQ  = [100.0, 97.55, 93.82, 101.65, 103.93, 104.65, 100.98, 97.88, 94.11, 90.59, 89.44, 87.32, 83.49, 89.39, 88.56, 83.54, 79.44, 85.2, 81.59, 85.42, 84.41, 87.34, 91.23, 93.05, 95.55, 93.37, 88.91, 85.37, 88.81, 83.67, 79.68, 77.29, 77.83, 75.41, 79.65, 81.33, 76.55, 83.28, 82.37, 82.98, 84.61, 81.57, 79.32, 77.32, 77.01, 77.74, 81.26, 81.75, 85.68, 88.55, 86.68, 87.1, 84.41, 86.67, 83.45, 88.31, 89.91, 92.82, 91.98, 92.13, 91.57, 93.29, 93.38, 94.0, 97.32, 100.76, 102.57, 102.52, 106.41, 104.85, 106.84, 105.92, 109.63, 108.64, 110.91, 107.6, 105.92, 103.57, 105.28, 109.2, 107.75, 107.24, 103.51, 103.62, 105.47, 105.64, 102.55, 99.87, 106.35, 109.43, 111.65, 112.65, 112.77, 113.42, 117.23, 118.11, 118.44, 114.74, 118.45, 121.81, 122.57, 124.07, 126.4, 124.52, 126.32, 128.87, 126.97, 125.49, 129.1, 128.41, 127.39, 126.75, 119.92, 124.65, 125.94, 127.85, 130.65, 132.44, 130.35, 133.89, 138.59, 138.87, 138.56, 143.49, 143.11, 137.44, 133.9, 129.78, 130.26, 137.38, 138.82, 137.74, 129.77, 137.47, 139.53, 140.77, 140.94, 142.68, 143.01, 143.25, 140.97, 148.69, 143.61, 146.28, 147.42, 152.26, 153.43, 150.0, 151.13, 149.98, 146.68, 150.89, 153.17, 151.05, 151.23, 155.64, 152.15, 146.97, 142.23, 138.72, 139.06, 135.62, 122.24, 131.42, 128.44, 136.67, 141.37, 141.13, 150.83, 147.28, 150.13, 153.26, 152.4, 152.36, 158.51, 160.86, 160.28, 162.32, 163.8, 160.19, 166.17, 166.97, 165.42, 164.97, 166.6, 169.67, 173.34, 172.36, 174.45, 170.49, 174.66, 178.47, 181.93, 176.34, 176.09, 170.65, 179.09, 180.89, 177.46, 178.46, 180.43, 177.32, 181.23, 179.67, 180.1, 179.85, 176.32, 174.08, 176.07, 175.63, 173.45, 171.71, 168.34, 162.7, 169.18, 176.73, 187.65, 192.0, 194.97, 205.69, 205.03, 207.52, 213.53, 215.8];
+
+// Benchmark registry — add or remove rows here and the chart, summary
+// cards, tooltips, and active-benchmark logic all adapt automatically.
+// Each `data` array must be the same length as BENCHMARK_DATES.
+const BENCHMARKS = [
+  { key: 'spy',  label: 'SPY',  longLabel: 'S&P 500 (SPY)',            data: BENCHMARK_SPY,  color: '#8B9DB0', dash: [5, 3] },
+  { key: 'spus', label: 'SPUS', longLabel: 'Sharia S&P 500 (SPUS)',    data: BENCHMARK_SPUS, color: '#B8924E', dash: [5, 3] },
+  { key: 'qqq',  label: 'QQQ',  longLabel: 'NASDAQ-100 (QQQ)',         data: BENCHMARK_QQQ,  color: '#6B7CB8', dash: [5, 3] },
+];
+
+function renderBenchmark() {
+  // Build a "vs. X · Y · Z" string from whatever benchmarks are in the
+  // registry so the heading stays accurate when benchmarks are added/removed.
+  const names = BENCHMARKS.map(b => b.label).join(' · ');
+  return `
+    <div class="section" id="benchmarkSection">
+      <h2>Portfolio vs. Benchmarks</h2>
+      <div class="section-sub">Time-weighted return since inception (Feb 2022) — normalised to $100. Comparing against ${names}. Portfolio = SPUS/IAU blend pre-2026, exact holdings post-Mar 2026.</div>
+      <div class="benchmark-periods">
+        <button class="period-btn" data-period="1m"        onclick="setBenchmarkPeriod('1m')">1 Month</button>
+        <button class="period-btn" data-period="3m"        onclick="setBenchmarkPeriod('3m')">3 Months</button>
+        <button class="period-btn" data-period="ytd"       onclick="setBenchmarkPeriod('ytd')">YTD</button>
+        <button class="period-btn" data-period="1y"        onclick="setBenchmarkPeriod('1y')">1 Year</button>
+        <button class="period-btn active" data-period="inception" onclick="setBenchmarkPeriod('inception')">Since Inception</button>
+      </div>
+      <div class="benchmark-summary" id="benchmarkSummary"></div>
+      <div class="chart-card">
+        <div class="chart-wrap" style="height:340px"><canvas id="benchmarkChart"></canvas></div>
+      </div>
+      <div class="benchmark-note" id="benchmarkNote"></div>
+    </div>`;
+}
+
+let _bmChart = null;
+let _bmPeriod = 'inception';
+
+function setBenchmarkPeriod(period) {
+  _bmPeriod = period;
+  // Active state via data-period attr — robust to label/text changes.
+  document.querySelectorAll('.period-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-period') === period);
+  });
+  renderBenchmarkChart();
+}
+
+// Slice the portfolio series and every benchmark in BENCHMARKS down to
+// the selected period and renormalise to 100 at the period start.
+// Returns { dates, port, series: [{key,label,longLabel,color,dash,data}, …] }.
+function getPeriodSlice(period) {
+  const today = BENCHMARK_DATES[BENCHMARK_DATES.length - 1];
+  const [ty, tm, td] = today.split('-').map(Number);
+  let startD;
+  if (period === 'inception') startD = BENCHMARK_DATES[0];
+  else if (period === 'ytd')   startD = `${ty}-01-01`;
+  else if (period === '1y')    startD = `${ty-1}-${String(tm).padStart(2,'0')}-${String(td).padStart(2,'0')}`;
+  else if (period === '3m') {
+    let m = tm - 3, y = ty;
+    if (m <= 0) { m += 12; y--; }
+    startD = `${y}-${String(m).padStart(2,'0')}-${String(td).padStart(2,'0')}`;
+  } else if (period === '1m') {
+    let m = tm - 1, y = ty;
+    if (m <= 0) { m += 12; y--; }
+    startD = `${y}-${String(m).padStart(2,'0')}-${String(td).padStart(2,'0')}`;
+  }
+  const idx = BENCHMARK_DATES.findIndex(d => d >= startD);
+  const start = idx < 0 ? 0 : idx;
+  const dates = BENCHMARK_DATES.slice(start);
+  const portSlice = BENCHMARK_PORT.slice(start);
+  const p0 = portSlice[0];
+  const port = portSlice.map(v => +(v / p0 * 100).toFixed(2));
+  const series = BENCHMARKS.map(b => {
+    const slice = b.data.slice(start);
+    const b0 = slice[0];
+    return {
+      key: b.key, label: b.label, longLabel: b.longLabel,
+      color: b.color, dash: b.dash,
+      data: slice.map(v => +(v / b0 * 100).toFixed(2))
+    };
+  });
+  return { dates, port, series };
+}
+
+function renderBenchmarkChart() {
+  const { dates, port, series } = getPeriodSlice(_bmPeriod);
+  const portRet = +(port[port.length-1] - 100).toFixed(2);
+  const sign    = v => v >= 0 ? 'pos' : 'neg';
+  const fmt     = v => (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
+
+  // Summary: portfolio card first, then one card per benchmark showing
+  // its return + alpha-vs-portfolio delta beneath. Coloured label dot
+  // matches the chart line so the eye can connect card ↔ line instantly.
+  const portCard = `
+    <div class="bm-stat">
+      <span class="bm-stat-label">Portfolio</span>
+      <span class="bm-stat-value ${sign(portRet)}">${fmt(portRet)}</span>
+      <span class="bm-stat-delta">total return this period</span>
+    </div>`;
+  const bmCards = series.map(s => {
+    const ret   = +(s.data[s.data.length - 1] - 100).toFixed(2);
+    const alpha = +(portRet - ret).toFixed(2);
+    return `
+      <div class="bm-stat">
+        <span class="bm-stat-label" style="color:${s.color}; font-weight:600">${s.longLabel}</span>
+        <span class="bm-stat-value ${sign(ret)}">${fmt(ret)}</span>
+        <span class="bm-stat-delta ${sign(alpha)}">${fmt(alpha)} vs ${s.label}</span>
+      </div>`;
+  }).join('');
+  document.getElementById('benchmarkSummary').innerHTML = portCard + bmCards;
+
+  const note = _bmPeriod === 'inception'
+    ? `Pre-2026: blended SPUS 76% + IAU 24% proxy. Post-Mar 2026: exact holdings. Inception: Feb 22, 2022.`
+    : `Growth of $100 invested at the start of the selected period.`;
+  document.getElementById('benchmarkNote').textContent = note;
+
+  // Build chart
+  const tc = getThemeColors();
+  if (_bmChart) { try { _bmChart.destroy(); } catch(e) {} }
+
+  const ctx = document.getElementById('benchmarkChart').getContext('2d');
+  const portColor = tc.accent || '#2D6A4F';
+  const datasets = [
+    {
+      label: 'Portfolio',
+      data: port,
+      borderColor: portColor,
+      backgroundColor: portColor + '22',
+      borderWidth: 2.8,
+      pointRadius: 0,
+      pointHoverRadius: 5,
+      fill: false,
+      tension: 0.3,
+      order: 0
+    },
+    ...series.map((s, i) => ({
+      label: s.longLabel,
+      data: s.data,
+      borderColor: s.color,
+      backgroundColor: s.color + '18',
+      borderWidth: 2,
+      pointRadius: 0,
+      pointHoverRadius: 5,
+      fill: false,
+      tension: 0.3,
+      borderDash: s.dash || [],
+      order: i + 1
+    }))
+  ];
+
+  _bmChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: dates, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: { color: tc.ink, font: { size: 12 }, usePointStyle: true, boxWidth: 20, padding: 14 }
+        },
+        tooltip: {
+          backgroundColor: tc.surface + 'EE',
+          titleColor: tc.ink,
+          bodyColor: tc.muted,
+          borderColor: tc.border,
+          borderWidth: 1,
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toFixed(2)}`,
+            // Footer lists alpha vs every benchmark so the tooltip stays
+            // useful no matter how many benchmarks are on.
+            footer: items => {
+              const p = items.find(i => i.dataset.label === 'Portfolio');
+              if (!p) return '';
+              return items
+                .filter(i => i.dataset.label !== 'Portfolio')
+                .map(i => {
+                  const diff = p.parsed.y - i.parsed.y;
+                  const sym  = BENCHMARKS.find(b => b.longLabel === i.dataset.label)?.label || i.dataset.label;
+                  return `Alpha vs ${sym}: ${diff >= 0 ? '+' : ''}${diff.toFixed(2)}`;
+                })
+                .join('\n');
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: tc.muted, font: { size: 10 },
+            maxTicksLimit: 8,
+            callback: function(val) {
+              return this.getLabelForValue(val).slice(0, 7); // "YYYY-MM"
+            }
+          },
+          grid: { color: tc.lineSoft }
+        },
+        y: {
+          ticks: {
+            color: tc.muted, font: { size: 11 },
+            callback: v => '$' + v.toFixed(0)
+          },
+          grid: { color: tc.lineSoft }
+        }
+      }
+    }
+  });
+}
+
+function getThemeColors() {
+  // Reads the same theme vars defined in :root / [data-theme="dark"] /
+  // the prefers-color-scheme media rule, so the benchmark chart tracks the
+  // active light/dark palette like every other chart on the page.
+  const s = getComputedStyle(document.documentElement);
+  const v = name => s.getPropertyValue(name).trim();
+  return {
+    accent:   v('--accent')    || '#2D6A4F',
+    ink:      v('--ink')       || '#1F3A2E',
+    muted:    v('--muted')     || '#8A8676',
+    surface:  v('--paper')     || '#FFFDF7',
+    border:   v('--line')      || '#E8DFC8',
+    lineSoft: v('--line-soft') || '#F1EAD3',
+    pos:      v('--positive')  || '#2D6A4F',
+    neg:      v('--negative')  || '#B0413E',
+    gold:     v('--gold')      || '#B8924E'
+  };
+}
+
+function render() {
+  if (!state.wb) return;
+  const holdings = parseHoldings();
+  const txs = parseTransactions();
+  const perf = computePerformance(txs, holdings);
+
+  document.getElementById('content').innerHTML = `
+    ${renderMasthead()}
+    ${renderHeadline(perf)}
+    ${renderMemberCards(perf)}
+    ${renderMemberCompare()}
+    ${renderAllocation()}
+    ${renderHoldings(holdings)}
+    ${renderBenchmark()}
+    ${renderFooter()}
+  `;
+  renderCharts(perf, holdings, txs);
+  setTimeout(() => { renderBenchmarkChart(); }, 10);
+
+  // Count-up animation on headline KPIs
+  document.querySelectorAll('.kpi-value[data-animate]').forEach((el, idx) => {
+    const kind = el.getAttribute('data-animate');
+    const target = parseFloat(el.getAttribute('data-target'));
+    if (isNaN(target)) return;
+    const formatter = kind === 'pct' ? FMT_PCT : FMT_USD;
+    el.innerHTML = formatter(0);
+    setTimeout(() => animateNumber(el, target, 900, formatter), 80 + idx * 60);
+  });
+}
+</script>
+</body>
+</html>
