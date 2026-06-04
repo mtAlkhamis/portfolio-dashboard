@@ -408,6 +408,12 @@
     background: var(--accent-soft);
     border-top: 2px solid var(--accent);
   }
+  .exch-tag {
+    font-size: 10px; font-weight: 500; color: var(--muted);
+    background: var(--bg); border-radius: 3px;
+    padding: 1px 4px; margin-left: 4px; vertical-align: middle;
+    letter-spacing: .03em;
+  }
   .table-card {
     background: var(--paper);
     border: 1px solid var(--line);
@@ -1138,44 +1144,115 @@ function renderAllocation() {
   `;
 }
 
+// ── Holdings formatters ──────────────────────────────────────────────────
+// Whole-dollar amounts (no decimals for >= $1)
+const FMT_$ = v => {
+  if (v == null || isNaN(v)) return '–';
+  const n = Number(v);
+  const abs = '$' + Math.abs(n).toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0});
+  return n < 0 ? `${_NEG_OPEN}${abs}${_NEG_CLOSE}` : abs;
+};
+// Price with 2 decimals
+const FMT_PRICE = v => {
+  if (v == null || isNaN(v)) return '–';
+  return '$' + Number(v).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+};
+// Shares: whole if integer, up to 4 dp if fractional
+const FMT_SH = v => {
+  if (v == null || isNaN(v)) return '–';
+  const n = Number(v);
+  if (Math.abs(n - Math.round(n)) < 0.0005) return Math.round(n).toLocaleString();
+  return n.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:4});
+};
+// Percentage with 2 dp, sign-coloured via CSS class (caller sets class)
+const FMT_PCT2 = v => {
+  if (v == null || isNaN(v)) return '–';
+  const pct = Number(v) * 100;
+  const abs = Math.abs(pct).toFixed(2) + '%';
+  return pct < 0 ? `${_NEG_OPEN}${abs}${_NEG_CLOSE}` : abs;
+};
+
 function renderHoldings(holdings) {
-  const total = holdings.total?.mv || 1;
+  const totalMV = holdings.total?.mv || 1;
   const tickers = Object.entries(holdings.byTicker)
-    .filter(([k, v]) => Math.abs(v.mv || 0) > 0.01)
+    .filter(([, v]) => Math.abs(v.mv || 0) > 0.01)
     .sort((a, b) => (b[1].mv || 0) - (a[1].mv || 0));
+
+  let totalDayPnl = 0;
+
   const rows = tickers.map(([sym, v]) => {
-    const gain = v.gain || 0;
-    const cost = v.cost || 0;
+    const gain    = v.gain || 0;
+    const cost    = v.cost || 0;
     const gainPct = (sym !== 'Cash' && cost) ? gain / cost : null;
-    const cls = gain >= 0 ? 'pos' : 'neg';
+    const cls     = gain >= 0 ? 'pos' : 'neg';
+    const avgPx   = (sym !== 'Cash' && v.shares > 0) ? cost / v.shares : null;
+
+    // Daily change from live prices
+    const lp         = state.livePrices?.[sym];
+    const dayChgPct  = lp?.changePct ?? null;
+    const dayPnl     = (sym !== 'Cash' && lp != null) ? v.shares * (lp.price - lp.prevClose) : null;
+    if (dayPnl != null) totalDayPnl += dayPnl;
+    const dayCls     = (dayChgPct ?? 0) >= 0 ? 'pos' : 'neg';
+
+    if (sym === 'Cash') {
+      return `<tr>
+        <td><strong>Cash</strong> <span class="exch-tag">USD</span></td>
+        <td class="num">–</td><td class="num">–</td>
+        <td class="num">–</td><td class="num">–</td>
+        <td class="num">–</td>
+        <td class="num">${FMT_$(v.mv)}</td>
+        <td class="num">–</td><td class="num">–</td>
+        <td class="num">${FMT_PCT2(v.mv / totalMV)}</td>
+      </tr>`;
+    }
     return `<tr>
       <td><strong>${sym}</strong></td>
-      <td class="num">${sym === 'Cash' ? '–' : FMT_NUM(v.shares)}</td>
-      <td class="num">${sym === 'Cash' ? '–' : FMT_USD2(v.price)}</td>
-      <td class="num">${FMT_USD2(v.mv)}</td>
-      <td class="num ${cls}">${sym === 'Cash' ? '–' : FMT_USD2(gain)}</td>
-      <td class="num ${cls}">${gainPct == null ? '–' : FMT_PCT(gainPct)}</td>
-      <td class="num">${FMT_PCT(v.mv / total)}</td>
+      <td class="num">${FMT_PRICE(v.price)}</td>
+      <td class="num">${avgPx != null ? FMT_PRICE(avgPx) : '–'}</td>
+      <td class="num ${dayCls}">${dayPnl != null ? FMT_$(dayPnl) : '–'}</td>
+      <td class="num ${dayCls}">${dayChgPct != null ? FMT_PCT2(dayChgPct) : '–'}</td>
+      <td class="num">${FMT_SH(v.shares)}</td>
+      <td class="num">${FMT_$(v.mv)}</td>
+      <td class="num ${cls}">${FMT_$(gain)}</td>
+      <td class="num ${cls}">${gainPct == null ? '–' : FMT_PCT2(gainPct)}</td>
+      <td class="num">${FMT_PCT2(v.mv / totalMV)}</td>
     </tr>`;
   }).join('');
-  const totalCost = holdings.total?.cost || 0;
-  const totalGain = holdings.total?.gain || 0;
+
+  const totalGain    = holdings.total?.gain || 0;
+  const totalCost    = holdings.total?.cost || 0;
   const totalGainPct = totalCost ? totalGain / totalCost : null;
-  const totalCls = totalGain >= 0 ? 'pos' : 'neg';
+  const totalCls     = totalGain    >= 0 ? 'pos' : 'neg';
+  const totalDayCls  = totalDayPnl  >= 0 ? 'pos' : 'neg';
+
   return `
     <div class="section">
       <h2>What We Own</h2>
-      <div class="section-sub">Current positions across the portfolio.</div>
+      <div class="section-sub">Current positions across the portfolio. Day P&amp;L and Day % update live during market hours.</div>
       <div class="table-card">
         <table>
-          <thead><tr><th>Symbol</th><th class="num">Shares</th><th class="num">Price</th><th class="num">Market Value</th><th class="num">Unrealized P/L</th><th class="num">% G/L</th><th class="num">Weight</th></tr></thead>
+          <thead><tr>
+            <th>Symbol</th>
+            <th class="num">Last Price</th>
+            <th class="num">Avg Price</th>
+            <th class="num">Day P&amp;L</th>
+            <th class="num">Day %</th>
+            <th class="num">Shares</th>
+            <th class="num">Market Value</th>
+            <th class="num">Unrlzd P&amp;L</th>
+            <th class="num">Unrlzd %</th>
+            <th class="num">Weight</th>
+          </tr></thead>
           <tbody>${rows}
             <tr class="total">
-              <td>Total</td><td></td><td></td>
-              <td class="num">${FMT_USD2(holdings.total?.mv || 0)}</td>
-              <td class="num ${totalCls}">${FMT_USD2(totalGain)}</td>
-              <td class="num ${totalCls}">${totalGainPct == null ? '–' : FMT_PCT(totalGainPct)}</td>
-              <td class="num">100.0%</td>
+              <td>Total</td>
+              <td></td><td></td>
+              <td class="num ${totalDayCls}">${totalDayPnl ? FMT_$(totalDayPnl) : '–'}</td>
+              <td></td><td></td>
+              <td class="num">${FMT_$(holdings.total?.mv || 0)}</td>
+              <td class="num ${totalCls}">${FMT_$(totalGain)}</td>
+              <td class="num ${totalCls}">${totalGainPct == null ? '–' : FMT_PCT2(totalGainPct)}</td>
+              <td class="num">100%</td>
             </tr>
           </tbody>
         </table>
