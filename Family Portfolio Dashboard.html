@@ -755,7 +755,7 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
 
 // ── Supabase config ───────────────────────────────────────────────────────
 const SUPABASE_XLSX_URL   = 'https://hcjugujmdlzfwdfecnjt.supabase.co/storage/v1/object/public/Portfolio/Family%20Portfolio%20Dashboard.xlsx';
-const SUPABASE_PRICES_URL = 'https://hcjugujmdlzfwdfecnjt.supabase.co/functions/v1/prices';
+const SUPABASE_PRICES_URL = 'https://hcjugujmdlzfwdfecnjt.supabase.co/functions/v1/Prices';
 const SUPABASE_ANON_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjanVndWptZGx6ZndkZmVjbmp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MDkwMjcsImV4cCI6MjA5NjA4NTAyN30.O7G9TlSt0irAe42fOFEPrSR5kynJb-fcJpbd-55kxPk';
 
 // Fetch live prices from Supabase Edge Function
@@ -764,9 +764,8 @@ async function fetchLivePrices() {
   try {
     const ctrl  = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 8000);
-    const res   = await fetch(SUPABASE_PRICES_URL, {
-      signal:  ctrl.signal,
-      headers: { 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'apikey': SUPABASE_ANON_KEY }
+    const res   = await fetch(`${SUPABASE_PRICES_URL}?apikey=${SUPABASE_ANON_KEY}`, {
+      signal: ctrl.signal
     });
     clearTimeout(timer);
     if (!res.ok) {
