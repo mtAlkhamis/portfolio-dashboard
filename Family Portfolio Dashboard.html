@@ -756,11 +756,14 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
 // ── Supabase config ───────────────────────────────────────────────────────
 const SUPABASE_XLSX_URL   = 'https://hcjugujmdlzfwdfecnjt.supabase.co/storage/v1/object/public/Portfolio/Family%20Portfolio%20Dashboard.xlsx';
 const SUPABASE_PRICES_URL = 'https://hcjugujmdlzfwdfecnjt.supabase.co/functions/v1/prices';
+const SUPABASE_ANON_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjanVndWptZGx6ZndkZmVjbmp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MDkwMjcsImV4cCI6MjA5NjA4NTAyN30.O7G9TlSt0irAe42fOFEPrSR5kynJb-fcJpbd-55kxPk';
 
 // Fetch live prices from Edge Function, store in state.livePrices
 async function fetchLivePrices() {
   try {
-    const res = await fetch(SUPABASE_PRICES_URL);
+    const res = await fetch(SUPABASE_PRICES_URL, {
+      headers: { 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'apikey': SUPABASE_ANON_KEY }
+    });
     if (!res.ok) return;
     state.livePrices = await res.json();
     const tag = document.getElementById('priceTag');
