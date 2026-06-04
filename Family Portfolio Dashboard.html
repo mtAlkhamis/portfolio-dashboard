@@ -785,9 +785,18 @@ async function autoLoadFromSupabase() {
   }
 }
 
-// Auto-refresh live prices every 60 seconds
+// Returns true if US markets are currently open (Mon-Fri, 9:30-16:00 ET)
+function isMarketOpen() {
+  const now  = new Date();
+  if (now.getDay() === 0 || now.getDay() === 6) return false; // weekend
+  const nyTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const mins   = nyTime.getHours() * 60 + nyTime.getMinutes();
+  return mins >= 570 && mins < 960; // 9:30 AM–4:00 PM ET
+}
+
+// Auto-refresh live prices every 60 s — only during US market hours
 setInterval(async () => {
-  if (!state.wb) return;
+  if (!state.wb || !isMarketOpen()) return;
   await fetchLivePrices();
   render();
 }, 60_000);
