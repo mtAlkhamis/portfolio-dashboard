@@ -758,16 +758,52 @@ const SUPABASE_XLSX_URL   = 'https://hcjugujmdlzfwdfecnjt.supabase.co/storage/v1
 const SUPABASE_PRICES_URL = 'https://hcjugujmdlzfwdfecnjt.supabase.co/functions/v1/prices';
 const SUPABASE_ANON_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjanVndWptZGx6ZndkZmVjbmp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MDkwMjcsImV4cCI6MjA5NjA4NTAyN30.O7G9TlSt0irAe42fOFEPrSR5kynJb-fcJpbd-55kxPk';
 
-// Fetch live prices from Edge Function, store in state.livePrices
+// Fetch live prices — tries Supabase Edge Function first, falls back to direct Yahoo Finance proxy
+const TICKERS = ['SPUS', 'SMH', 'IAU', 'HLAL', 'ISDU.L', 'ISDE.L'];
+
+async function fetchFromYahoo(ticker) {
+  const yahoo = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`;
+  const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(yahoo)}`;
+  const r = await fetch(proxy);
+  const d = await r.json();
+  const m = d?.chart?.result?.[0]?.meta;
+  if (!m) return null;
+  return {
+    price:     m.regularMarketPrice,
+    prevClose: m.chartPreviousClose || m.previousClose,
+    changePct: m.chartPreviousClose ? (m.regularMarketPrice - m.chartPreviousClose) / m.chartPreviousClose : 0
+  };
+}
+
 async function fetchLivePrices() {
   try {
+    // Try Supabase Edge Function first
     const res = await fetch(SUPABASE_PRICES_URL, {
       headers: { 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'apikey': SUPABASE_ANON_KEY }
     });
-    if (!res.ok) return;
-    state.livePrices = await res.json();
-    const tag = document.getElementById('priceTag');
-    if (tag) tag.textContent = '● Prices live · ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    if (res.ok) {
+      const data = await res.json();
+      if (Object.keys(data).length > 0 && !data.error) {
+        state.livePrices = data;
+        const tag = document.getElementById('priceTag');
+        if (tag) tag.textContent = '● Prices live · ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        return;
+      }
+    }
+  } catch {}
+
+  // Fallback: fetch directly from Yahoo Finance via CORS proxy
+  try {
+    const results = {};
+    await Promise.all(TICKERS.map(async ticker => {
+      const p = await fetchFromYahoo(ticker).catch(() => null);
+      if (p) results[ticker] = p;
+    }));
+    if (Object.keys(results).length > 0) {
+      state.livePrices = results;
+      const tag = document.getElementById('priceTag');
+      if (tag) tag.textContent = '● Prices live · ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    }
   } catch {}
 }
 
