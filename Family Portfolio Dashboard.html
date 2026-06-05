@@ -1257,7 +1257,7 @@ function renderHoldings(holdings) {
         <td><strong>Cash</strong></td>
         <td class="num">–</td><td class="num">–</td><td class="num">–</td>
         <td class="num">–</td><td class="num">–</td>
-        <td class="num bold-col">${FMT_$(v.mv)}</td>
+        <td class="num" style="font-weight:700;font-size:14px">${FMT_$(v.mv)}</td>
         <td class="num">–</td><td class="num">–</td><td class="num">–</td>
       </tr>`;
     }
@@ -1268,10 +1268,10 @@ function renderHoldings(holdings) {
       <td class="num">${FMT_PRICE(v.price)}</td>
       <td class="num ${dayCls}">${dayChgPerShare != null ? FMT_PRICE(dayChgPerShare) : '–'}</td>
       <td class="num ${dayCls}">${dayChgPct != null ? FMT_PCT2(dayChgPct) : '–'}</td>
-      <td class="num bold-col">${FMT_$(v.mv)}</td>
+      <td class="num" style="font-weight:700;font-size:14px">${FMT_$(v.mv)}</td>
       <td class="num ${dayCls}">${dayPnl != null ? FMT_$(dayPnl) : '–'}</td>
-      <td class="num bold-col ${cls}">${FMT_$(gain)}</td>
-      <td class="num bold-col ${cls}">${gainPct == null ? '–' : FMT_PCT2(gainPct)}</td>
+      <td class="num ${cls}" style="font-weight:700;font-size:14px">${FMT_$(gain)}</td>
+      <td class="num ${cls}" style="font-weight:700;font-size:14px">${gainPct == null ? '–' : FMT_PCT2(gainPct)}</td>
     </tr>`;
   }).join('');
 
