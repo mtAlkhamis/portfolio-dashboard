@@ -404,7 +404,7 @@
     text-align: left; padding: 12px 10px;
     color: var(--muted); font-weight: 600;
     border-bottom: 2px solid var(--line);
-    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
   }
   td {
     padding: 12px 10px;
@@ -415,8 +415,10 @@
   th.num, td.num { text-align: right; }
   td.pos { color: var(--positive); }
   td.neg { color: var(--negative); }
+  td.bold-col { font-weight: 700; }
   tr.total td {
     font-weight: 700;
+    font-size: 14px;
     background: var(--accent-soft);
     border-top: 2px solid var(--accent);
   }
@@ -1052,7 +1054,7 @@ function renderMasthead() {
     <div class="masthead">
       <div class="eyebrow">Performance Report</div>
       <h1>Alkhamis Family Portfolio</h1>
-      <div class="subtitle">Sharia-compliant joint account · 5-member internal allocation</div>
+      <div class="subtitle">Sharia-compliant joint account · 7-member internal allocation</div>
       <div class="meta">
         <div><span class="label">As of</span>${today}</div>
         <div><span class="label">Inception</span>February 2022</div>
@@ -1115,7 +1117,7 @@ function renderHeadline(perf, holdings) {
       <div class="kpi">
         <div class="kpi-label">Annualized Return</div>
         <div class="kpi-value ${annClass}" data-animate="pct" data-target="${annualized || 0}">${annualized != null ? FMT_PCT(annualized) : '–'}</div>
-        <div class="kpi-sub">XIRR since Feb 2022</div>
+        <div class="kpi-sub">Since inception · annualized</div>
       </div>
     </div>
     <div class="perf-banner">
@@ -1128,7 +1130,7 @@ function renderHeadline(perf, holdings) {
 function renderMemberCompare() {
   return `
     <div class="section">
-      <h2>Cash In vs. Value Today — by Member</h2>
+      <h2>Invested vs. Current Value</h2>
       <div class="section-sub">Each family member's lifetime cash contribution alongside their current slot value. The taller second bar = your money working for you.</div>
       <div class="chart-card">
         <div class="chart-wrap" style="height: 340px;"><canvas id="memberCompareChart"></canvas></div>
@@ -1255,7 +1257,7 @@ function renderHoldings(holdings) {
         <td><strong>Cash</strong></td>
         <td class="num">–</td><td class="num">–</td><td class="num">–</td>
         <td class="num">–</td><td class="num">–</td>
-        <td class="num">${FMT_$(v.mv)}</td>
+        <td class="num bold-col">${FMT_$(v.mv)}</td>
         <td class="num">–</td><td class="num">–</td><td class="num">–</td>
       </tr>`;
     }
@@ -1292,10 +1294,10 @@ function renderHoldings(holdings) {
             <th class="num">Last Price</th>
             <th class="num">Day Chg $</th>
             <th class="num">Day %</th>
-            <th class="num">Mkt Value</th>
+            <th class="num">Market Value</th>
             <th class="num">Day P&amp;L</th>
-            <th class="num">Unrlzd P&amp;L</th>
-            <th class="num">Unrlzd %</th>
+            <th class="num">Unrealized P&amp;L</th>
+            <th class="num">Unrealized %</th>
           </tr></thead>
           <tbody>${rows}
             <tr class="total">
