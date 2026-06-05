@@ -1187,10 +1187,12 @@ const FMT_$ = v => {
   const abs = '$' + Math.abs(n).toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0});
   return n < 0 ? `${_NEG_OPEN}${abs}${_NEG_CLOSE}` : abs;
 };
-// Price with 2 decimals
+// Price with 2 decimals — negative shown as ($X.XX) in red
 const FMT_PRICE = v => {
   if (v == null || isNaN(v)) return '–';
-  return '$' + Number(v).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+  const n = Number(v);
+  const abs = '$' + Math.abs(n).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+  return n < 0 ? `${_NEG_OPEN}${abs}${_NEG_CLOSE}` : abs;
 };
 // Shares: whole if integer, up to 4 dp if fractional
 const FMT_SH = v => {
