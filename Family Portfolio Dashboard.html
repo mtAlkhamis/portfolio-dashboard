@@ -1083,7 +1083,7 @@ function renderHeadline(perf, holdings) {
       </div>
       <div class="kpi">
         <div class="kpi-label">Daily P&amp;L</div>
-        <div class="kpi-value ${dayPnlClass}">${hasDayPnl ? FMT_USD(dayPnl) : '–'}</div>
+        <div class="kpi-value ${dayPnlClass}" data-animate="usd" data-target="${dayPnl || 0}">${hasDayPnl ? FMT_USD(dayPnl) : '–'}</div>
         <div class="kpi-sub">${hasDayPnl ? 'Today\'s gain / loss' : 'Live prices not loaded'}</div>
       </div>
       <div class="kpi">
@@ -1098,7 +1098,7 @@ function renderHeadline(perf, holdings) {
       </div>
       <div class="kpi">
         <div class="kpi-label">Annualized Return</div>
-        <div class="kpi-value ${annClass}">${annualized != null ? FMT_PCT(annualized) : '–'}</div>
+        <div class="kpi-value ${annClass}" data-animate="pct" data-target="${annualized || 0}">${annualized != null ? FMT_PCT(annualized) : '–'}</div>
         <div class="kpi-sub">XIRR since Feb 2022</div>
       </div>
     </div>
