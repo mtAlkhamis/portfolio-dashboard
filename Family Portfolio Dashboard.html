@@ -1985,17 +1985,22 @@ function renderBenchmarkChart() {
       },
       scales: {
         x: {
-          ticks: {
-            color: tc.muted, font: { size: 10 },
-            maxTicksLimit: 8,
-            includeBounds: true,
-            callback: function(val, idx, ticks) {
-              const label = this.getLabelForValue(val).slice(0, 7);
-              // Always show the last data point's date
-              if (idx === ticks.length - 1) return this.getLabelForValue(val).slice(0, 7);
-              return label;
+          ticks: (() => {
+            const n = dates.length;
+            const numTicks = 8;
+            const showAt = new Set();
+            for (let i = 0; i < numTicks; i++) {
+              showAt.add(Math.round(i * (n - 1) / (numTicks - 1)));
             }
-          },
+            return {
+              color: tc.muted, font: { size: 10 },
+              autoSkip: false,
+              maxRotation: 0,
+              callback: function(val, idx) {
+                return showAt.has(idx) ? this.getLabelForValue(val).slice(0, 7) : undefined;
+              }
+            };
+          })(),
           grid: { color: tc.lineSoft }
         },
         y: {
