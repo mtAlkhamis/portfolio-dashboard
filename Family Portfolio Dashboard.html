@@ -212,8 +212,8 @@
     padding: 40px 36px;
     margin-bottom: 40px;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 28px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 20px;
     box-shadow: var(--shadow-card);
   }
   .headline .kpi { text-align: center; }
@@ -512,7 +512,7 @@
   }
 
   @media (max-width: 900px) {
-    .headline { grid-template-columns: repeat(2, 1fr); }
+    .headline { grid-template-columns: repeat(3, 1fr); }
     .two-col { grid-template-columns: 1fr; }
     .members { grid-template-columns: repeat(2, 1fr); }
     .masthead h1 { font-size: 36px; }
@@ -1046,24 +1046,45 @@ function renderMasthead() {
   `;
 }
 
-function renderHeadline(perf) {
+function renderHeadline(perf, holdings) {
   const t = perf.total;
   const profitClass = t.profit >= 0 ? 'positive' : 'negative';
   const since = ((new Date() - new Date(2022, 1, 24)) / (365.25 * 86400000)).toFixed(1);
-  const annLabel = t.annualized != null
-    ? `<span class="perf-rate">${FMT_PCT(t.annualized)} annualized</span>`
+
+  // Daily P&L from live prices
+  const dayPnl = holdings
+    ? Object.entries(holdings.byTicker)
+        .filter(([s]) => s !== 'Cash')
+        .reduce((sum, [sym, v]) => {
+          const lp = state.livePrices?.[sym];
+          return sum + (lp ? v.shares * (lp.price - lp.prevClose) : 0);
+        }, 0)
+    : null;
+  const hasDayPnl   = dayPnl !== null && dayPnl !== 0;
+  const dayPnlClass = hasDayPnl ? (dayPnl >= 0 ? 'positive' : 'negative') : '';
+
+  const annualized  = t.annualized;
+  const annClass    = (annualized ?? 0) >= 0 ? 'positive' : 'negative';
+  const annLabel    = annualized != null
+    ? `<span class="perf-rate">${FMT_PCT(annualized)} annualized</span>`
     : `<span class="perf-rate">annualized return computing…</span>`;
+
   return `
     <div class="headline">
       <div class="kpi">
-        <div class="kpi-label">Portfolio Value Today</div>
+        <div class="kpi-label">Portfolio Value</div>
         <div class="kpi-value" data-animate="usd" data-target="${t.mv}">${FMT_USD(t.mv)}</div>
         <div class="kpi-sub">Positions + cash</div>
       </div>
       <div class="kpi">
         <div class="kpi-label">Net Cash Invested</div>
         <div class="kpi-value" data-animate="usd" data-target="${t.netInvested}">${FMT_USD(t.netInvested)}</div>
-        <div class="kpi-sub">Lifetime deposits − withdrawals</div>
+        <div class="kpi-sub">Deposits − withdrawals</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Daily P&amp;L</div>
+        <div class="kpi-value ${dayPnlClass}">${hasDayPnl ? FMT_USD(dayPnl) : '–'}</div>
+        <div class="kpi-sub">${hasDayPnl ? 'Today\'s gain / loss' : 'Live prices not loaded'}</div>
       </div>
       <div class="kpi">
         <div class="kpi-label">Total Profit</div>
@@ -1074,6 +1095,11 @@ function renderHeadline(perf) {
         <div class="kpi-label">Return Since Inception</div>
         <div class="kpi-value ${profitClass}" data-animate="pct" data-target="${t.return}">${FMT_PCT(t.return)}</div>
         <div class="kpi-sub">Profit ÷ cash invested</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Annualized Return</div>
+        <div class="kpi-value ${annClass}">${annualized != null ? FMT_PCT(annualized) : '–'}</div>
+        <div class="kpi-sub">XIRR since Feb 2022</div>
       </div>
     </div>
     <div class="perf-banner">
@@ -1987,7 +2013,7 @@ function render() {
 
   document.getElementById('content').innerHTML = `
     ${renderMasthead()}
-    ${renderHeadline(perf)}
+    ${renderHeadline(perf, holdings)}
     ${renderMemberCards(perf)}
     ${renderMemberCompare()}
     ${renderAllocation()}
