@@ -1988,8 +1988,12 @@ function renderBenchmarkChart() {
           ticks: {
             color: tc.muted, font: { size: 10 },
             maxTicksLimit: 8,
-            callback: function(val) {
-              return this.getLabelForValue(val).slice(0, 7); // "YYYY-MM"
+            includeBounds: true,
+            callback: function(val, idx, ticks) {
+              const label = this.getLabelForValue(val).slice(0, 7);
+              // Always show the last data point's date
+              if (idx === ticks.length - 1) return this.getLabelForValue(val).slice(0, 7);
+              return label;
             }
           },
           grid: { color: tc.lineSoft }
