@@ -415,7 +415,7 @@
   th.num, td.num { text-align: right; }
   td.pos { color: var(--positive); }
   td.neg { color: var(--negative); }
-  td.bold-col { font-weight: 700; }
+  td.bold-col { font-weight: 700; font-size: 14px; }
   tr.total td {
     font-weight: 700;
     font-size: 14px;
@@ -1155,7 +1155,7 @@ function renderMemberCards(perf) {
           <span class="label">Profit</span>
           <span class="value ${profitClass}">${FMT_USD(p.profit)}</span>
         </div>
-        <div class="row"><span class="label">Return %</span><span class="value ${profitClass}">${FMT_PCT(p.return)}</span></div>
+        <div class="row headline-row"><span class="label">Return %</span><span class="value ${profitClass}">${FMT_PCT(p.return)}</span></div>
         <div class="row"><span class="label">Annualized</span><span class="value ${profitClass}">${p.annualized != null ? FMT_PCT(p.annualized) : '–'}</span></div>
       </div>
     `;
@@ -1268,10 +1268,10 @@ function renderHoldings(holdings) {
       <td class="num">${FMT_PRICE(v.price)}</td>
       <td class="num ${dayCls}">${dayChgPerShare != null ? FMT_PRICE(dayChgPerShare) : '–'}</td>
       <td class="num ${dayCls}">${dayChgPct != null ? FMT_PCT2(dayChgPct) : '–'}</td>
-      <td class="num">${FMT_$(v.mv)}</td>
+      <td class="num bold-col">${FMT_$(v.mv)}</td>
       <td class="num ${dayCls}">${dayPnl != null ? FMT_$(dayPnl) : '–'}</td>
-      <td class="num ${cls}">${FMT_$(gain)}</td>
-      <td class="num ${cls}">${gainPct == null ? '–' : FMT_PCT2(gainPct)}</td>
+      <td class="num bold-col ${cls}">${FMT_$(gain)}</td>
+      <td class="num bold-col ${cls}">${gainPct == null ? '–' : FMT_PCT2(gainPct)}</td>
     </tr>`;
   }).join('');
 
@@ -1890,7 +1890,7 @@ function renderBenchmarkChart() {
   // matches the chart line so the eye can connect card ↔ line instantly.
   const portCard = `
     <div class="bm-stat">
-      <span class="bm-stat-label">Portfolio</span>
+      <span class="bm-stat-label" style="color:var(--accent);font-weight:600">Portfolio</span>
       <span class="bm-stat-value ${sign(portRet)}">${fmt(portRet)}</span>
       <span class="bm-stat-delta">total return this period</span>
     </div>`;
