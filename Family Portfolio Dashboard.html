@@ -702,14 +702,15 @@
   }
   #lt-donut-canvas {
     flex: 0 0 auto;
-    width: 200px !important;
-    height: 200px !important;
+    width: 180px !important;
+    height: 180px !important;
   }
   .lt-donut-legend {
     flex: 1;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px 20px;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 6px 24px;
+    overflow: hidden;
   }
   .lt-legend-item {
     display: flex;
@@ -1851,7 +1852,7 @@ function renderLookThrough(holdings) {
 
       <!-- Donut chart: top 10 by portfolio % -->
       <div class="lt-donut-wrap">
-        <canvas id="lt-donut-canvas" height="280"></canvas>
+        <canvas id="lt-donut-canvas"></canvas>
         <div class="lt-donut-legend" id="lt-donut-legend"></div>
       </div>
 
