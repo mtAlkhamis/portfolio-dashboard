@@ -681,6 +681,18 @@
   .etf-refresh-btn:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
   .etf-refresh-btn:disabled { opacity: 0.6; cursor: default; }
 
+  /* ── Day change badge ── */
+  .day-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .day-badge.pos { background: var(--pill-buy-bg); color: var(--pill-buy-fg); }
+  .day-badge.neg { background: var(--pill-sell-bg); color: var(--pill-sell-fg); }
+
   /* ── Look-through donut chart ── */
   .lt-donut-wrap {
     display: flex;
@@ -877,15 +889,18 @@ const MEMBERS = ["Madi", "Mama", "Talal", "Mohammad", "Ibrahim", "Aisha", "Sami"
 const COLORS_MEMBER = ["#2D6A4F", "#74A57F", "#D9A441", "#C48838", "#A06B23", "#B36F4D", "#5C3D2E"];
 const COLORS_ASSET  = ["#2D6A4F", "#B8924E", "#74A57F", "#B36F4D", "#5C3D2E", "#A1A1A1"];
 
-let state = { wb: null, fileName: null, livePrices: {}, etfHoldings: {}, etfHoldingsStatus: 'idle' };
+let state = { wb: null, fileName: null, livePrices: {}, etfHoldings: {}, etfHoldingsStatus: 'idle',
+              holdingsSort: { col: 'mv', dir: 'desc' },
+              ltSort: { col: 'total', dir: 'desc' },
+              _holdings: null, _txs: null, _perf: null };
 
 document.getElementById('fileInput').addEventListener('change', async (e) => {
   const f = e.target.files[0];
   if (!f) return;
   const buf = await f.arrayBuffer();
   state.wb = XLSX.read(buf, { type: 'array', cellDates: true });
+  state._holdings = null; state._txs = null; state._perf = null;
   state.fileName = f.name;
-  // fileInfo removed
   await fetchLivePrices();
   render();
 });
@@ -903,7 +918,11 @@ const TICKER_MAP   = {
 };
 
 // Fetch live prices directly from Finnhub (no proxy, no CORS issues)
+let _fetchingPrices = false; // lock to prevent concurrent Finnhub calls
+
 async function fetchLivePrices() {
+  if (_fetchingPrices) return;
+  _fetchingPrices = true;
   const tag = document.getElementById('priceTag');
   try {
     const results = {};
@@ -921,7 +940,7 @@ async function fetchLivePrices() {
       } catch {}
     }));
     if (Object.keys(results).length > 0) {
-      state.livePrices = results;
+      Object.assign(state.livePrices, results); // merge — keeps constituent prices intact
       if (tag) tag.textContent = '● Prices live · ' +
         new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
     } else {
@@ -929,7 +948,46 @@ async function fetchLivePrices() {
     }
   } catch (e) {
     if (tag) tag.textContent = `⚠ ${e.message}`;
+  } finally {
+    _fetchingPrices = false;
   }
+}
+
+// Fetch live prices for ALL ETF constituents not already in state.livePrices.
+// Batched 50 at a time with 1s between batches to stay within Finnhub's 60/min limit.
+// Runs in the background — page is already rendered; badges fill in progressively.
+async function fetchEtfConstituentPrices() {
+  if (_fetchingPrices) return;
+  _fetchingPrices = true;
+  const etfData = state.etfHoldings || {};
+  const already = new Set(Object.keys(state.livePrices));
+
+  const totals = {};
+  for (const constituents of Object.values(etfData)) {
+    if (!Array.isArray(constituents)) continue;
+    for (const c of constituents) {
+      const t = (c.symbol || '').replace(' US', '').trim();
+      if (!t || already.has(t) || t.length > 6 || t.startsWith('-')) continue;
+      totals[t] = (totals[t] || 0) + (c.percent || 0);
+    }
+  }
+
+  // Top 60 by weight, fired simultaneously — Finnhub returns as many as it can
+  const top60 = Object.entries(totals).sort((a,b) => b[1]-a[1]).slice(0, 60).map(([t])=>t);
+  if (!top60.length) { _fetchingPrices = false; return; }
+
+  await Promise.all(top60.map(async ticker => {
+    try {
+      const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${FINNHUB_KEY}`);
+      const d = await r.json();
+      if (d.c > 0) state.livePrices[ticker] = {
+        price: d.c, prevClose: d.pc, changePct: d.pc ? (d.c - d.pc) / d.pc : 0
+      };
+    } catch {}
+  }));
+
+  _fetchingPrices = false;
+  if (state.wb) render();
 }
 
 // ── ETF Look-Through ─────────────────────────────────────────────────────
@@ -1074,8 +1132,6 @@ const SPUS_HOLDINGS_FALLBACK = [
   {symbol:'BLDR',name:'Builders FirstSource Inc',percent:0.02},{symbol:'TTD',name:'Trade Desk Inc',percent:0.02},
   {symbol:'POOL',name:'Pool Corp',percent:0.02},{symbol:'AOS',name:'A O Smith Corp',percent:0.02},
 ];
-
-const SUPABASE_ETF_URL = 'https://hcjugujmdlzfwdfecnjt.supabase.co/storage/v1/object/public/Portfolio/etf_holdings.json';
 
 async function fetchEtfHoldings() {
   // Set hardcoded data immediately — dashboard renders without waiting for network
@@ -1230,14 +1286,17 @@ async function autoLoadFromSupabase() {
     if (!res.ok) throw new Error('Fetch failed');
     const buf = await res.arrayBuffer();
     state.wb = XLSX.read(buf, { type: 'array', cellDates: true });
-    await fetchLivePrices();
-    await fetchEtfHoldings(); // instant — uses hardcoded data
+    state._holdings = null; state._txs = null; state._perf = null;
+    await fetchEtfHoldings();  // instant — uses hardcoded data
+    await fetchLivePrices();   // direct holdings only
   } catch {
     return;
   }
-  // Render and background refresh outside the catch so render errors surface properly
+  // Render immediately — user sees the page right away
   render();
+  // Background tasks — run after paint, no await
   autoRefreshSpus();
+  fetchEtfConstituentPrices(); // fills in ETF day % badges progressively
 }
 
 // Returns true if US markets are currently open (Mon-Fri, 9:30-16:00 ET)
@@ -1251,7 +1310,7 @@ function isMarketOpen() {
 
 // Auto-refresh live prices every 60 s — only during US market hours
 setInterval(async () => {
-  if (!state.wb || !isMarketOpen()) return;
+  if (!state.wb || !isMarketOpen() || _fetchingPrices) return;
   await fetchLivePrices();
   render();
 }, 60_000);
@@ -1622,11 +1681,52 @@ const FMT_PCT2 = v => {
   return pct < 0 ? `${_NEG_OPEN}${abs}${_NEG_CLOSE}` : abs;
 };
 
+function setLtSort(col) {
+  if (state.ltSort.col === col) {
+    state.ltSort.dir = state.ltSort.dir === 'desc' ? 'asc' : 'desc';
+  } else {
+    state.ltSort = { col, dir: 'desc' };
+  }
+  render();
+}
+
+function setHoldingsSort(col) {
+  if (state.holdingsSort.col === col) {
+    state.holdingsSort.dir = state.holdingsSort.dir === 'desc' ? 'asc' : 'desc';
+  } else {
+    state.holdingsSort = { col, dir: 'desc' };
+  }
+  render();
+}
+
 function renderHoldings(holdings) {
   const totalMV = holdings.total?.mv || 1;
-  const tickers = Object.entries(holdings.byTicker)
-    .filter(([, v]) => Math.abs(v.mv || 0) > 0.01)
-    .sort((a, b) => (b[1].mv || 0) - (a[1].mv || 0));
+  const { col, dir } = state.holdingsSort;
+
+  const sortVal = (sym, v) => {
+    const lp = state.livePrices?.[sym];
+    if (col === 'symbol')  return sym;
+    if (col === 'shares')  return v.shares || 0;
+    if (col === 'avgpx')   return v.shares > 0 ? (v.cost / v.shares) : 0;
+    if (col === 'price')   return lp?.price || v.price || 0;
+    if (col === 'daypct')  return lp?.changePct ?? -Infinity;
+    if (col === 'mv')      return v.mv || 0;
+    if (col === 'daypnl')  return (lp && sym !== 'Cash') ? v.shares * (lp.price - lp.prevClose) : -Infinity;
+    if (col === 'gain')    return v.gain || 0;
+    if (col === 'gainpct') return v.cost ? (v.gain / v.cost) : 0;
+    return 0;
+  };
+
+  const cash = Object.entries(holdings.byTicker).filter(([s]) => s === 'Cash');
+  const stocks = Object.entries(holdings.byTicker)
+    .filter(([s, v]) => s !== 'Cash' && Math.abs(v.mv || 0) > 0.01)
+    .sort((a, b) => {
+      const va = sortVal(a[0], a[1]);
+      const vb = sortVal(b[0], b[1]);
+      if (col === 'symbol') return dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+      return dir === 'asc' ? va - vb : vb - va;
+    });
+  const tickers = [...stocks, ...cash];
 
   let totalDayPnl = 0;
 
@@ -1662,7 +1762,7 @@ function renderHoldings(holdings) {
       <td class="num">${avgPx != null ? FMT_PRICE(avgPx) : '–'}</td>
       <td class="num">${FMT_PRICE(v.price)}</td>
       <td class="num ${dayCls}">${dayChgPerShare != null ? FMT_PRICE(dayChgPerShare) : '–'}</td>
-      <td class="num ${dayCls}">${dayChgPct != null ? FMT_PCT2(dayChgPct) : '–'}</td>
+      <td class="num">${dayChgPct != null ? `<span class="day-badge ${dayCls}">${dayChgPct >= 0 ? '▲' : '▼'} ${Math.abs(dayChgPct * 100).toFixed(2)}%</span>` : '–'}</td>
       <td class="num" style="font-weight:700;font-size:14px">${FMT_$(v.mv)}</td>
       <td class="num ${dayCls}">${dayPnl != null ? FMT_$(dayPnl) : '–'}</td>
       <td class="num ${cls}" style="font-weight:700;font-size:14px">${FMT_$(gain)}</td>
@@ -1682,18 +1782,23 @@ function renderHoldings(holdings) {
       <div class="section-sub">Day Chg and Day P&amp;L update live during market hours (9:30 AM–4:00 PM ET).</div>
       <div class="table-card holdings-table-card">
         <table>
-          <thead><tr>
-            <th>Symbol</th>
-            <th class="num">Shares</th>
-            <th class="num">Avg Price</th>
-            <th class="num">Last Price</th>
-            <th class="num">Day Chg $</th>
-            <th class="num">Day %</th>
-            <th class="num">Market Value</th>
-            <th class="num">Day P&amp;L</th>
-            <th class="num">Unrealized P&amp;L</th>
-            <th class="num">Unrealized %</th>
-          </tr></thead>
+          <thead><tr>${[
+            ['symbol','Symbol',''],
+            ['shares','Shares','num'],
+            ['avgpx','Avg Price','num'],
+            ['price','Last Price','num'],
+            ['daychg','Day Chg $','num'],
+            ['daypct','Day %','num'],
+            ['mv','Mkt Value','num'],
+            ['daypnl','Day P&L','num'],
+            ['gain','Unreal. P&L','num'],
+            ['gainpct','Unreal. %','num'],
+          ].map(([c, label, cls]) => {
+            const active = state.holdingsSort.col === c;
+            const arrow  = active ? (state.holdingsSort.dir === 'desc' ? ' ↓' : ' ↑') : '';
+            const style  = `cursor:pointer;user-select:none;white-space:nowrap;${active ? 'color:var(--ink)' : ''}`;
+            return `<th class="${cls}" style="${style}" onclick="setHoldingsSort('${c}')">${label}${arrow}</th>`;
+          }).join('')}</tr></thead>
           <tbody>${rows}
             <tr class="total">
               <td>Total</td>
@@ -1711,6 +1816,25 @@ function renderHoldings(holdings) {
 }
 
 // ── ETF Look-Through renderer ─────────────────────────────────────────────
+// Patch only the Day % column in the look-through table — no full re-render
+function patchLtDayBadges() {
+  const h2 = Array.from(document.querySelectorAll('.section h2'))
+    .find(el => el.textContent.includes('Really Own'));
+  if (!h2) return;
+  const rows = h2.closest('.section').querySelectorAll('tbody tr');
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    if (cells.length < 6) return;
+    const ticker = cells[1]?.querySelector('strong')?.textContent?.trim();
+    if (!ticker) return;
+    const lp = state.livePrices?.[ticker];
+    const dayChgPct = lp?.changePct ?? null;
+    if (dayChgPct === null) return; // don't overwrite existing '–' with nothing
+    const cls = dayChgPct >= 0 ? 'pos' : 'neg';
+    cells[5].innerHTML = `<span class="day-badge ${cls}">${dayChgPct >= 0 ? '▲' : '▼'} ${Math.abs(dayChgPct * 100).toFixed(2)}%</span>`;
+  });
+}
+
 function renderLookThrough(holdings) {
   const status = state.etfHoldingsStatus;
   const etfData = state.etfHoldings || {};
@@ -1756,9 +1880,23 @@ function renderLookThrough(holdings) {
   addExposure('SMH',  getMV('SMH'));
   addExposure('SPUS', getMV('SPUS'));
 
-  // Sort by total exposure
-  const sorted = Object.entries(exposure)
-    .sort((a, b) => b[1].total - a[1].total);
+  // Sort by ltSort state
+  const { col: ltCol, dir: ltDir } = state.ltSort;
+  const ltSortVal = (ticker, v) => {
+    const lp = state.livePrices?.[ticker];
+    if (ltCol === 'ticker')  return ticker;
+    if (ltCol === 'pct')     return totalPortfolioMV > 0 ? v.total / totalPortfolioMV : 0;
+    if (ltCol === 'total')   return v.total;
+    if (ltCol === 'daypct')  return lp?.changePct ?? -Infinity;
+    if (ltCol === 'smh')     return v.smh;
+    if (ltCol === 'spus')    return v.spus;
+    return v.total;
+  };
+  const sorted = Object.entries(exposure).sort((a, b) => {
+    const va = ltSortVal(a[0], a[1]), vb = ltSortVal(b[0], b[1]);
+    if (ltCol === 'ticker') return ltDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+    return ltDir === 'asc' ? va - vb : vb - va;
+  });
 
   // ── Status line ──
   let statusHtml = '';
@@ -1774,11 +1912,10 @@ function renderLookThrough(holdings) {
     statusHtml = `<span class="lookthrough-status">✓ SMH ${smhCount} stocks · ${spusLabel}</span>`;
   }
 
-  // ── Table rows ──
-  const DEFAULT_SHOW = 30;
-  const showAll = document.getElementById('lt-show-all')?.dataset.show === 'true';
-  const visibleRows = showAll ? sorted : sorted.slice(0, DEFAULT_SHOW);
-  const hasMore = sorted.length > DEFAULT_SHOW;
+  // Split: stocks with price data get individual rows; the rest collapse into "Others"
+  const withPrice    = sorted.filter(([t]) => state.livePrices?.[t]);
+  const withoutPrice = sorted.filter(([t]) => !state.livePrices?.[t]);
+  const visibleRows  = withPrice;
 
   function barHtml(pct) {
     const w = Math.min(pct * 100 * 4, 100); // scale so 1% exposure = 4% bar width
@@ -1787,12 +1924,19 @@ function renderLookThrough(holdings) {
 
   const tableRows = visibleRows.map(([ticker, v], i) => {
     const pctOfPortfolio = totalPortfolioMV > 0 ? v.total / totalPortfolioMV : 0;
+    const lp = state.livePrices?.[ticker];
+    const dayChgPct = lp?.changePct ?? null;
+    const dayCls = (dayChgPct ?? 0) >= 0 ? 'pos' : 'neg';
+    const dayBadge = dayChgPct != null
+      ? `<span class="day-badge ${dayCls}">${dayChgPct >= 0 ? '▲' : '▼'} ${Math.abs(dayChgPct * 100).toFixed(2)}%</span>`
+      : '–';
     return `<tr>
       <td style="color:var(--muted);font-size:12px">${i + 1}</td>
       <td><strong>${ticker}</strong></td>
       <td style="color:var(--ink-soft);font-size:13px">${v.name || ''}</td>
       <td class="num" style="font-weight:700">${(pctOfPortfolio * 100).toFixed(2)}%</td>
       <td class="num" style="font-weight:700">${FMT_$(v.total)}</td>
+      <td class="num">${dayBadge}</td>
       <td class="num">
         ${v.smh > 0.5 ? `<div>${FMT_$(v.smh)}</div><div><span class="lookthrough-tag tag-smh">SMH</span></div>` : '–'}
       </td>
@@ -1803,22 +1947,15 @@ function renderLookThrough(holdings) {
   }).join('');
 
 
-  // Stash top-10 for the post-render donut
-  const top10 = sorted.slice(0, 10).map(([ticker, v]) => ({
+  // Donut always shows top 10 by weight — independent of table sort
+  const byWeight = Object.entries(exposure).sort((a, b) => b[1].total - a[1].total);
+  const top10 = byWeight.slice(0, 10).map(([ticker, v]) => ({
     ticker,
     pct: totalPortfolioMV > 0 ? (v.total / totalPortfolioMV) * 100 : 0,
   }));
-  const othersSum = sorted.slice(10).reduce((s, [, v]) =>
+  const othersSum = byWeight.slice(10).reduce((s, [, v]) =>
     s + (totalPortfolioMV > 0 ? (v.total / totalPortfolioMV) * 100 : 0), 0);
-  window._ltDonutData = { top10, othersSum };
-
-  const showMoreBtn = (!showAll && hasMore) ? `
-    <div class="lt-show-more">
-      <button id="lt-show-all" data-show="false"
-        onclick="this.dataset.show='true'; this.closest('.section').querySelector('tbody').innerHTML = ''; render()">
-        Show all ${sorted.length} stocks ↓
-      </button>
-    </div>` : '';
+  _ltDonutData = { top10, othersSum };
 
   return `
     <div class="section">
@@ -1848,33 +1985,59 @@ function renderLookThrough(holdings) {
         <table>
           <thead><tr>
             <th style="width:24px;text-align:center">#</th>
-            <th style="width:58px;text-align:center">Ticker</th>
-            <th style="width:100px;text-align:center">Company</th>
-            <th style="width:88px;text-align:center">% of Portfolio</th>
-            <th style="width:88px;text-align:center">Total Exposure</th>
-            <th style="width:100px;text-align:center">via SMH</th>
-            <th style="width:100px;text-align:center">via SPUS</th>
+            ${[
+              ['ticker','Ticker','58px'],
+              ['company','Company','100px'],
+              ['pct','% of Portfolio','88px'],
+              ['total','Total Exposure','88px'],
+              ['daypct','Day %','80px'],
+              ['smh','via SMH','100px'],
+              ['spus','via SPUS','100px'],
+            ].map(([c, label, w]) => {
+              const active = state.ltSort.col === c;
+              const arrow  = active ? (state.ltSort.dir === 'desc' ? ' ↓' : ' ↑') : '';
+              const clickable = c !== 'company';
+              const style = `width:${w};text-align:center;${clickable ? 'cursor:pointer;user-select:none;' : ''}${active ? 'color:var(--ink)' : ''}`;
+              return `<th style="${style}"${clickable ? ` onclick="setLtSort('${c}')"` : ''}>${label}${arrow}</th>`;
+            }).join('')}
           </tr></thead>
           <tbody>
             ${tableRows}
+            ${(() => {
+              if (!withoutPrice.length) return '';
+              const othPct   = withoutPrice.reduce((s,[,v]) => s + (totalPortfolioMV > 0 ? v.total/totalPortfolioMV : 0), 0);
+              const othTotal = withoutPrice.reduce((s,[,v]) => s + v.total, 0);
+              const othSmh   = withoutPrice.reduce((s,[,v]) => s + (v.smh  || 0), 0);
+              const othSpus  = withoutPrice.reduce((s,[,v]) => s + (v.spus || 0), 0);
+              return `<tr style="background:var(--line-soft);color:var(--muted)">
+                <td style="font-size:12px">–</td>
+                <td><strong style="color:var(--muted)">Others</strong></td>
+                <td style="font-size:12px;color:var(--muted)">${withoutPrice.length} stocks — no price data</td>
+                <td class="num" style="font-weight:700;color:var(--muted)">${(othPct*100).toFixed(2)}%</td>
+                <td class="num" style="font-weight:700;color:var(--muted)">${FMT_$(othTotal)}</td>
+                <td class="num">–</td>
+                <td class="num">${othSmh > 0.5 ? `<div>${FMT_$(othSmh)}</div><div><span class="lookthrough-tag tag-smh">SMH</span></div>` : '–'}</td>
+                <td class="num">${othSpus > 0.5 ? `<div>${FMT_$(othSpus)}</div><div><span class="lookthrough-tag tag-spus">SPUS</span></div>` : '–'}</td>
+              </tr>`;
+            })()}
           </tbody>
         </table>
       </div>
-      ${showMoreBtn}
     </div>
   `;
 }
 
 let _ltDonutChart = null;
+let _ltDonutData = null;
 function renderLookThroughChart() {
   const canvas = document.getElementById('lt-donut-canvas');
   const legendEl = document.getElementById('lt-donut-legend');
-  if (!canvas || !window._ltDonutData) return;
+  if (!canvas || !_ltDonutData) return;
 
   // Destroy previous instance
   if (_ltDonutChart) { try { _ltDonutChart.destroy(); } catch(e) {} _ltDonutChart = null; }
 
-  const { top10, othersSum } = window._ltDonutData;
+  const { top10, othersSum } = _ltDonutData;
   const tc = themeColors();
 
   const PALETTE = [
@@ -1984,75 +2147,8 @@ function animateNumber(el, target, duration, formatter) {
   requestAnimationFrame(tick);
 }
 
-// Custom plugin: draw % labels OUTSIDE the donut with a short leader line in the slice's color.
-const sliceLabelsPlugin = {
-  id: 'sliceLabels',
-  afterDatasetsDraw(chart) {
-    const { ctx, data } = chart;
-    const dataset = data.datasets[0];
-    const total = dataset.data.reduce((a, b) => a + (Number(b) || 0), 0);
-    if (!total) return;
-    const meta = chart.getDatasetMeta(0);
-    meta.data.forEach((arc, i) => {
-      const value = Number(dataset.data[i]) || 0;
-      const pct = (value / total) * 100;
-      if (pct < 1.5) return;   // skip slivers
-      const midAngle = (arc.startAngle + arc.endAngle) / 2;
-      const cosA = Math.cos(midAngle), sinA = Math.sin(midAngle);
-      const innerEdgeX = arc.x + cosA * arc.outerRadius;
-      const innerEdgeY = arc.y + sinA * arc.outerRadius;
-      const elbowX = arc.x + cosA * (arc.outerRadius + 12);
-      const elbowY = arc.y + sinA * (arc.outerRadius + 12);
-      const onRight = cosA >= 0;
-      const labelX = elbowX + (onRight ? 8 : -8);
-      const labelY = elbowY;
-      const color = Array.isArray(dataset.backgroundColor) ? dataset.backgroundColor[i] : dataset.backgroundColor;
-      ctx.save();
-      // Leader line in slice color
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.moveTo(innerEdgeX, innerEdgeY);
-      ctx.lineTo(elbowX, elbowY);
-      ctx.stroke();
-      // Percentage text
-      ctx.fillStyle = themeColors().ink;
-      ctx.font = 'bold 12px -apple-system, "Helvetica Neue", Arial, sans-serif';
-      ctx.textBaseline = 'middle';
-      ctx.textAlign = onRight ? 'left' : 'right';
-      ctx.fillText(pct.toFixed(1) + '%', labelX, labelY);
-      ctx.restore();
-    });
-  }
-};
-
-// Custom plugin: draw $ value at the end of each horizontal bar
-const barValueLabelsPlugin = {
-  id: 'barValueLabels',
-  afterDatasetsDraw(chart) {
-    const { ctx, data, scales } = chart;
-    const dataset = data.datasets[0];
-    const meta = chart.getDatasetMeta(0);
-    meta.data.forEach((bar, i) => {
-      const value = Number(dataset.data[i]) || 0;
-      const label = (value >= 0 ? '+$' : '-$') + Math.abs(value).toLocaleString(undefined, { maximumFractionDigits: 0 });
-      ctx.save();
-      ctx.fillStyle = themeColors().ink;
-      ctx.font = 'bold 12px -apple-system, "Helvetica Neue", Arial, sans-serif';
-      ctx.textBaseline = 'middle';
-      if (value >= 0) {
-        ctx.textAlign = 'left';
-        ctx.fillText('  ' + label, bar.x, bar.y);
-      } else {
-        ctx.textAlign = 'right';
-        ctx.fillText(label + '  ', bar.x, bar.y);
-      }
-      ctx.restore();
-    });
-  }
-};
-
 function renderCharts(perf, holdings, txs) {
+  while (chartInstances.length) { try { chartInstances.pop().destroy(); } catch(e) {} }
   setTimeout(() => {
     // Render an HTML legend next to a donut canvas. CSS handles all the layout
     // and resize behavior — no Chart.js layout recalculation involved.
@@ -2519,7 +2615,7 @@ function renderBenchmarkChart() {
   document.getElementById('benchmarkNote').textContent = note;
 
   // Build chart
-  const tc = getThemeColors();
+  const tc = themeColors();
   if (_bmChart) { try { _bmChart.destroy(); } catch(e) {} }
 
   const ctx = document.getElementById('benchmarkChart').getContext('2d');
@@ -2566,10 +2662,10 @@ function renderBenchmarkChart() {
           labels: { color: tc.ink, font: { size: 12 }, usePointStyle: true, boxWidth: 20, padding: 14 }
         },
         tooltip: {
-          backgroundColor: tc.surface + 'EE',
+          backgroundColor: tc.paper + 'EE',
           titleColor: tc.ink,
           bodyColor: tc.muted,
-          borderColor: tc.border,
+          borderColor: tc.line,
           borderWidth: 1,
           callbacks: {
             label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toFixed(2)}`,
@@ -2622,30 +2718,14 @@ function renderBenchmarkChart() {
   });
 }
 
-function getThemeColors() {
-  // Reads the same theme vars defined in :root / [data-theme="dark"] /
-  // the prefers-color-scheme media rule, so the benchmark chart tracks the
-  // active light/dark palette like every other chart on the page.
-  const s = getComputedStyle(document.documentElement);
-  const v = name => s.getPropertyValue(name).trim();
-  return {
-    accent:   v('--accent')    || '#2D6A4F',
-    ink:      v('--ink')       || '#1F3A2E',
-    muted:    v('--muted')     || '#8A8676',
-    surface:  v('--paper')     || '#FFFDF7',
-    border:   v('--line')      || '#E8DFC8',
-    lineSoft: v('--line-soft') || '#F1EAD3',
-    pos:      v('--positive')  || '#2D6A4F',
-    neg:      v('--negative')  || '#B0413E',
-    gold:     v('--gold')      || '#B8924E'
-  };
-}
-
 function render() {
   if (!state.wb) return;
-  const holdings = parseHoldings();
-  const txs = parseTransactions();
-  const perf = computePerformance(txs, holdings);
+  if (!state._holdings) state._holdings = parseHoldings();
+  if (!state._txs)      state._txs      = parseTransactions();
+  if (!state._perf)     state._perf     = computePerformance(state._txs, state._holdings);
+  const holdings = state._holdings;
+  const txs      = state._txs;
+  const perf     = state._perf;
 
   document.getElementById('content').innerHTML = `
     ${renderMasthead()}
