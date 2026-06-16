@@ -119,7 +119,7 @@
     background: color-mix(in srgb, var(--paper) 60%, transparent);
     border: 1px dashed var(--line);
     border-radius: 8px;
-    display: flex; align-items: center; gap: 14px;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px;
     font-size: 13px; color: var(--muted);
   }
   .upload-bar button.load-btn {
@@ -127,10 +127,16 @@
     padding: 6px 14px; border-radius: 5px; font-weight: 600;
     cursor: pointer; font-size: 12px;
     transition: background 0.15s;
+    flex-shrink: 0;
   }
   .upload-bar button.load-btn:hover { background: var(--ink); }
   .upload-bar input[type=file] { display: none; }
-  .upload-bar .file-info { flex: 1; min-width: 0; }
+  .upload-bar .file-info {
+    width: 100%;
+    order: 5;
+    text-align: center;
+    font-size: 12px;
+  }
 
   /* Theme toggle — segmented control: Auto / Light / Dark */
   .theme-toggle {
@@ -552,24 +558,16 @@
     .masthead .meta { flex-direction: column; gap: 4px; font-size: 13px; }
 
     /* Upload bar — stack into rows */
-    .upload-bar {
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-    }
     .upload-bar button.load-btn {
       width: 100%; padding: 13px; font-size: 15px; text-align: center;
     }
-    #fileInfo { width: 100%; font-size: 12px; text-align: center; }
-    #priceTag { margin-left: 0; width: 100%; text-align: center;
-                font-size: 13px; }
+    #priceTag { margin-left: 0 !important; width: 100%; text-align: center; font-size: 13px; }
 
     /* Theme toggle — own centered row, equal-width buttons, easy to tap */
     .theme-toggle {
       width: 100%;
       display: flex;
       justify-content: center;
-      order: 10; /* push to last row */
     }
     .theme-toggle button {
       flex: 1;
@@ -742,8 +740,7 @@
   <div class="upload-bar">
     <button type="button" class="load-btn" onclick="document.getElementById('fileInput').click()">Load workbook (.xlsx)</button>
     <input type="file" id="fileInput" accept=".xlsx,.xlsm" />
-    <span id="priceTag" style="margin-left:auto;font-size:11px;color:var(--positive);white-space:nowrap;"></span>
-    <span id="fileInfo" class="file-info">Load "Family Portfolio Dashboard.xlsx" to refresh. Use <strong>Cmd/Ctrl + P</strong> to print or save as PDF.</span>
+    <span id="priceTag" style="font-size:11px;color:var(--positive);white-space:nowrap;margin-left:auto;"></span>
     <div class="theme-toggle" role="group" aria-label="Color theme">
       <button type="button" data-theme-set="auto" title="Match device theme">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></svg>
@@ -758,6 +755,7 @@
         Dark
       </button>
     </div>
+    <span id="fileInfo" class="file-info">Load "Family Portfolio Dashboard.xlsx" to refresh. Use <strong>Cmd/Ctrl + P</strong> to print or save as PDF.</span>
   </div>
 
   <div id="content">
@@ -1859,13 +1857,13 @@ function renderLookThrough(holdings) {
       <div class="table-card holdings-table-card">
         <table>
           <thead><tr>
-            <th style="width:32px">#</th>
-            <th style="width:80px">Ticker</th>
-            <th style="width:150px">Company</th>
-            <th class="num" style="width:120px">% of Portfolio</th>
-            <th class="num" style="width:120px">Total Exposure</th>
-            <th class="num" style="width:120px">via SMH</th>
-            <th class="num" style="width:120px">via SPUS</th>
+            <th style="width:24px;text-align:center">#</th>
+            <th style="width:58px;text-align:center">Ticker</th>
+            <th style="width:100px;text-align:center">Company</th>
+            <th style="width:88px;text-align:center">% of Portfolio</th>
+            <th style="width:88px;text-align:center">Total Exposure</th>
+            <th style="width:100px;text-align:center">via SMH</th>
+            <th style="width:100px;text-align:center">via SPUS</th>
           </tr></thead>
           <tbody>
             ${tableRows}
