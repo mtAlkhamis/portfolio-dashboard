@@ -131,12 +131,6 @@
   }
   .upload-bar button.load-btn:hover { background: var(--ink); }
   .upload-bar input[type=file] { display: none; }
-  .upload-bar .file-info {
-    width: 100%;
-    order: 5;
-    text-align: center;
-    font-size: 12px;
-  }
 
   /* Theme toggle — segmented control: Auto / Light / Dark */
   .theme-toggle {
@@ -755,7 +749,6 @@
         Dark
       </button>
     </div>
-    <span id="fileInfo" class="file-info">Load "Family Portfolio Dashboard.xlsx" to refresh. Use <strong>Cmd/Ctrl + P</strong> to print or save as PDF.</span>
   </div>
 
   <div id="content">
@@ -891,7 +884,7 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
   const buf = await f.arrayBuffer();
   state.wb = XLSX.read(buf, { type: 'array', cellDates: true });
   state.fileName = f.name;
-  document.getElementById('fileInfo').innerHTML = f.name + " · loaded locally · use <strong>Cmd/Ctrl + P</strong> to print";
+  // fileInfo removed
   await fetchLivePrices();
   render();
 });
@@ -1231,18 +1224,14 @@ async function uploadEtfJson(payload) {
 
 // Auto-load xlsx from Supabase on page open
 async function autoLoadFromSupabase() {
-  const info = document.getElementById('fileInfo');
   try {
-    info.innerHTML = 'Loading portfolio from cloud…';
     const res = await fetch(SUPABASE_XLSX_URL);
     if (!res.ok) throw new Error('Fetch failed');
     const buf = await res.arrayBuffer();
     state.wb = XLSX.read(buf, { type: 'array', cellDates: true });
-    info.innerHTML = 'Live from cloud · <strong>Cmd/Ctrl + P</strong> to print or save as PDF';
     await fetchLivePrices();
     await fetchEtfHoldings(); // instant — uses hardcoded data
   } catch {
-    info.innerHTML = 'Could not load from cloud — use the button to load locally';
     return;
   }
   // Render and background refresh outside the catch so render errors surface properly
