@@ -624,6 +624,114 @@
     .bm-stat-label { font-size: 12px; }
     .bm-stat-delta { font-size: 13px; }
   }
+
+  /* ── ETF Look-Through ── */
+  .lookthrough-controls {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .lookthrough-controls label {
+    font-size: 12px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .lookthrough-controls select {
+    background: var(--paper); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 5px 10px; font-size: 13px; cursor: pointer;
+  }
+  .lookthrough-status {
+    font-size: 12px; color: var(--muted); margin-left: auto;
+  }
+  .lookthrough-status.loading { color: var(--gold); }
+  .lookthrough-status.error   { color: var(--negative); }
+  .lookthrough-bar-wrap {
+    height: 6px; background: var(--line-soft); border-radius: 3px;
+    overflow: hidden; width: 100px; display: inline-block; vertical-align: middle;
+  }
+  .lookthrough-bar {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--gold));
+  }
+  .lookthrough-tag {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 1px 5px; border-radius: 3px; vertical-align: middle;
+    margin-left: 4px; letter-spacing: 0.5px;
+  }
+  .tag-smh  { background: #E0EAF5; color: #235480; }
+  .tag-spus { background: #E0F0E0; color: #1F5C3E; }
+  .tag-iau  { background: #FFF3C4; color: #8C6606; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .tag-smh  { background: #1F324A; color: #9CC0E0; }
+    :root:not([data-theme="light"]) .tag-spus { background: #1F3D2B; color: #9CD4B0; }
+    :root:not([data-theme="light"]) .tag-iau  { background: #3D3414; color: #E8C870; }
+  }
+  :root[data-theme="dark"] .tag-smh  { background: #1F324A; color: #9CC0E0; }
+  :root[data-theme="dark"] .tag-spus { background: #1F3D2B; color: #9CD4B0; }
+  :root[data-theme="dark"] .tag-iau  { background: #3D3414; color: #E8C870; }
+  .lt-show-more {
+    margin-top: 14px; text-align: center;
+  }
+  .lt-show-more button {
+    background: none; border: 1px solid var(--line);
+    color: var(--accent); font-size: 13px; font-weight: 600;
+    padding: 7px 20px; border-radius: 6px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .lt-show-more button:hover { background: var(--accent-soft); }
+  .etf-refresh-btn {
+    background: none; border: 1px solid var(--line);
+    color: var(--muted); font-size: 12px; font-weight: 600;
+    padding: 4px 12px; border-radius: 5px; cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    margin-left: auto;
+  }
+  .etf-refresh-btn:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+  .etf-refresh-btn:disabled { opacity: 0.6; cursor: default; }
+
+  /* ── Look-through donut chart ── */
+  .lt-donut-wrap {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    margin: 20px 0 24px;
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  #lt-donut-canvas {
+    flex: 0 0 auto;
+    width: 200px !important;
+    height: 200px !important;
+  }
+  .lt-donut-legend {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 20px;
+  }
+  .lt-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+  }
+  .lt-legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .lt-legend-ticker {
+    flex: 1;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .lt-legend-pct {
+    color: var(--muted);
+    font-size: 12px;
+    min-width: 42px;
+    text-align: right;
+  }
 </style>
 </head>
 <body>
@@ -775,7 +883,7 @@ const MEMBERS = ["Madi", "Mama", "Talal", "Mohammad", "Ibrahim", "Aisha", "Sami"
 const COLORS_MEMBER = ["#2D6A4F", "#74A57F", "#D9A441", "#C48838", "#A06B23", "#B36F4D", "#5C3D2E"];
 const COLORS_ASSET  = ["#2D6A4F", "#B8924E", "#74A57F", "#B36F4D", "#5C3D2E", "#A1A1A1"];
 
-let state = { wb: null, fileName: null };
+let state = { wb: null, fileName: null, livePrices: {}, etfHoldings: {}, etfHoldingsStatus: 'idle' };
 
 document.getElementById('fileInput').addEventListener('change', async (e) => {
   const f = e.target.files[0];
@@ -830,6 +938,297 @@ async function fetchLivePrices() {
   }
 }
 
+// ── ETF Look-Through ─────────────────────────────────────────────────────
+// SMH + SPUS hardcoded from provider CSVs. On page load, a background fetch
+// via CORS proxy tries to pull fresh SPUS data automatically — no user action needed.
+// Falls back silently to hardcoded data if the fetch fails.
+
+const SMH_HOLDINGS_FALLBACK = [
+  {symbol:'NVDA', name:'Nvidia Corp',                        percent:19.17},
+  {symbol:'TSM',  name:'Taiwan Semiconductor Manufacturing', percent:10.69},
+  {symbol:'AVGO', name:'Broadcom Inc',                       percent: 7.59},
+  {symbol:'ASML', name:'ASML Holding NV',                    percent: 5.60},
+  {symbol:'LRCX', name:'Lam Research Corp',                  percent: 5.48},
+  {symbol:'MU',   name:'Micron Technology Inc',              percent: 5.41},
+  {symbol:'KLAC', name:'KLA Corp',                           percent: 5.28},
+  {symbol:'INTC', name:'Intel Corp',                         percent: 5.02},
+  {symbol:'AMAT', name:'Applied Materials Inc',              percent: 4.91},
+  {symbol:'AMD',  name:'Advanced Micro Devices Inc',         percent: 4.85},
+  {symbol:'TXN',  name:'Texas Instruments Inc',              percent: 4.41},
+  {symbol:'ADI',  name:'Analog Devices Inc',                 percent: 4.32},
+  {symbol:'QCOM', name:'Qualcomm Inc',                       percent: 3.75},
+  {symbol:'SNPS', name:'Synopsys Inc',                       percent: 2.89},
+  {symbol:'CDNS', name:'Cadence Design Systems Inc',         percent: 2.49},
+  {symbol:'MRVL', name:'Marvell Technology Inc',             percent: 1.77},
+  {symbol:'NXPI', name:'NXP Semiconductors NV',              percent: 1.47},
+  {symbol:'MPWR', name:'Monolithic Power Systems Inc',       percent: 1.10},
+  {symbol:'MCHP', name:'Microchip Technology Inc',           percent: 1.03},
+  {symbol:'TER',  name:'Teradyne Inc',                       percent: 0.99},
+  {symbol:'STM',  name:'STMicroelectronics NV',              percent: 0.66},
+  {symbol:'ON',   name:'ON Semiconductor Corp',              percent: 0.55},
+  {symbol:'SWKS', name:'Skyworks Solutions Inc',             percent: 0.21},
+  {symbol:'QRVO', name:'Qorvo Inc',                          percent: 0.17},
+  {symbol:'OLED', name:'Universal Display Corp',             percent: 0.14},
+];
+
+// SPUS — SP Funds S&P 500 Sharia ETF, 212 holdings as of 2026-06-15
+const SPUS_HOLDINGS_FALLBACK = [
+  {symbol:'NVDA',name:'NVIDIA Corp',percent:13.54},{symbol:'AAPL',name:'Apple Inc',percent:11.60},
+  {symbol:'MSFT',name:'Microsoft Corp',percent:7.88},{symbol:'GOOGL',name:'Alphabet Inc',percent:5.69},
+  {symbol:'AVGO',name:'Broadcom Inc',percent:4.92},{symbol:'TSLA',name:'Tesla Inc',percent:3.08},
+  {symbol:'MU',name:'Micron Technology Inc',percent:2.98},{symbol:'LLY',name:'Eli Lilly & Co',percent:2.42},
+  {symbol:'AMD',name:'Advanced Micro Devices Inc',percent:2.25},{symbol:'XOM',name:'Exxon Mobil Corp',percent:1.66},
+  {symbol:'JNJ',name:'Johnson & Johnson',percent:1.57},{symbol:'CSCO',name:'Cisco Systems Inc',percent:1.29},
+  {symbol:'LRCX',name:'Lam Research Corp',percent:1.24},{symbol:'AMAT',name:'Applied Materials Inc',percent:1.21},
+  {symbol:'ABBV',name:'AbbVie Inc',percent:1.09},{symbol:'PG',name:'Procter & Gamble Co',percent:0.94},
+  {symbol:'KLAC',name:'KLA Corp',percent:0.92},{symbol:'HD',name:'Home Depot Inc',percent:0.88},
+  {symbol:'ORCL',name:'Oracle Corp',percent:0.86},{symbol:'MRK',name:'Merck & Co Inc',percent:0.79},
+  {symbol:'SNDK',name:'Sandisk Corp',percent:0.75},{symbol:'TXN',name:'Texas Instruments Inc',percent:0.75},
+  {symbol:'GEV',name:'GE Vernova Inc',percent:0.69},{symbol:'IBM',name:'IBM Corp',percent:0.69},
+  {symbol:'LIN',name:'Linde PLC',percent:0.67},{symbol:'QCOM',name:'QUALCOMM Inc',percent:0.63},
+  {symbol:'PANW',name:'Palo Alto Networks Inc',percent:0.61},{symbol:'ADI',name:'Analog Devices Inc',percent:0.57},
+  {symbol:'STX',name:'Seagate Technology Holdings',percent:0.55},{symbol:'PEP',name:'PepsiCo Inc',percent:0.54},
+  {symbol:'TJX',name:'TJX Cos Inc',percent:0.52},{symbol:'TMO',name:'Thermo Fisher Scientific Inc',percent:0.48},
+  {symbol:'CRWD',name:'Crowdstrike Holdings Inc',percent:0.47},{symbol:'ANET',name:'Arista Networks Inc',percent:0.46},
+  {symbol:'UNP',name:'Union Pacific Corp',percent:0.45},{symbol:'GILD',name:'Gilead Sciences Inc',percent:0.43},
+  {symbol:'CRM',name:'Salesforce Inc',percent:0.42},{symbol:'ABT',name:'Abbott Laboratories',percent:0.42},
+  {symbol:'COP',name:'ConocoPhillips',percent:0.40},{symbol:'UBER',name:'Uber Technologies Inc',percent:0.40},
+  {symbol:'ISRG',name:'Intuitive Surgical Inc',percent:0.40},{symbol:'WELL',name:'Welltower Inc',percent:0.40},
+  {symbol:'PLD',name:'Prologis Inc',percent:0.38},{symbol:'GLW',name:'Corning Inc',percent:0.38},
+  {symbol:'BKNG',name:'Booking Holdings Inc',percent:0.36},{symbol:'LOW',name:"Lowe's Cos Inc",percent:0.34},
+  {symbol:'VRT',name:'Vertiv Holdings Co',percent:0.32},{symbol:'DHR',name:'Danaher Corp',percent:0.31},
+  {symbol:'VRTX',name:'Vertex Pharmaceuticals Inc',percent:0.31},{symbol:'NEM',name:'Newmont Corp',percent:0.30},
+  {symbol:'ACN',name:'Accenture PLC',percent:0.29},{symbol:'SYK',name:'Stryker Corp',percent:0.29},
+  {symbol:'NOW',name:'ServiceNow Inc',percent:0.29},{symbol:'MDT',name:'Medtronic PLC',percent:0.28},
+  {symbol:'PWR',name:'Quanta Services Inc',percent:0.28},{symbol:'CDNS',name:'Cadence Design Systems Inc',percent:0.28},
+  {symbol:'EQIX',name:'Equinix Inc',percent:0.27},{symbol:'FCX',name:'Freeport-McMoRan Inc',percent:0.27},
+  {symbol:'TT',name:'Trane Technologies PLC',percent:0.27},{symbol:'MCK',name:'McKesson Corp',percent:0.26},
+  {symbol:'CSX',name:'CSX Corp',percent:0.25},{symbol:'FTNT',name:'Fortinet Inc',percent:0.25},
+  {symbol:'JCI',name:'Johnson Controls International',percent:0.24},{symbol:'ADBE',name:'Adobe Inc',percent:0.24},
+  {symbol:'CMI',name:'Cummins Inc',percent:0.24},{symbol:'SLB',name:'SLB Ltd',percent:0.23},
+  {symbol:'MMM',name:'3M Co',percent:0.23},{symbol:'SNPS',name:'Synopsys Inc',percent:0.23},
+  {symbol:'MDLZ',name:'Mondelez International Inc',percent:0.22},{symbol:'UPS',name:'United Parcel Service Inc',percent:0.22},
+  {symbol:'WM',name:'Waste Management Inc',percent:0.22},{symbol:'CEG',name:'Constellation Energy Corp',percent:0.22},
+  {symbol:'EMR',name:'Emerson Electric Co',percent:0.22},{symbol:'NXPI',name:'NXP Semiconductors NV',percent:0.21},
+  {symbol:'ROST',name:'Ross Stores Inc',percent:0.21},{symbol:'ORLY',name:"O'Reilly Automotive Inc",percent:0.21},
+  {symbol:'COHR',name:'Coherent Corp',percent:0.20},{symbol:'EOG',name:'EOG Resources Inc',percent:0.20},
+  {symbol:'SHW',name:'Sherwin-Williams Co',percent:0.20},{symbol:'CL',name:'Colgate-Palmolive Co',percent:0.20},
+  {symbol:'BSX',name:'Boston Scientific Corp',percent:0.19},{symbol:'MPWR',name:'Monolithic Power Systems Inc',percent:0.19},
+  {symbol:'CRH',name:'CRH PLC',percent:0.19},{symbol:'ITW',name:'Illinois Tool Works Inc',percent:0.19},
+  {symbol:'NSC',name:'Norfolk Southern Corp',percent:0.19},{symbol:'ECL',name:'Ecolab Inc',percent:0.19},
+  {symbol:'TER',name:'Teradyne Inc',percent:0.18},{symbol:'URI',name:'United Rentals Inc',percent:0.18},
+  {symbol:'MNST',name:'Monster Beverage Corp',percent:0.18},{symbol:'TEL',name:'TE Connectivity PLC',percent:0.17},
+  {symbol:'APD',name:'Air Products and Chemicals Inc',percent:0.17},{symbol:'CIEN',name:'Ciena Corp',percent:0.17},
+  {symbol:'FIX',name:'Comfort Systems USA Inc',percent:0.17},{symbol:'NUE',name:'Nucor Corp',percent:0.17},
+  {symbol:'TGT',name:'Target Corp',percent:0.17},{symbol:'CTAS',name:'Cintas Corp',percent:0.16},
+  {symbol:'REGN',name:'Regeneron Pharmaceuticals Inc',percent:0.16},{symbol:'COR',name:'Cencora Inc',percent:0.15},
+  {symbol:'DASH',name:'DoorDash Inc',percent:0.15},{symbol:'DVN',name:'Devon Energy Corp',percent:0.15},
+  {symbol:'NKE',name:'NIKE Inc',percent:0.15},{symbol:'FAST',name:'Fastenal Co',percent:0.15},
+  {symbol:'CAH',name:'Cardinal Health Inc',percent:0.15},{symbol:'CARR',name:'Carrier Global Corp',percent:0.15},
+  {symbol:'EW',name:'Edwards Lifesciences Corp',percent:0.14},{symbol:'MCHP',name:'Microchip Technology Inc',percent:0.14},
+  {symbol:'EBAY',name:'eBay Inc',percent:0.14},{symbol:'CTVA',name:'Corteva Inc',percent:0.14},
+  {symbol:'GWW',name:'WW Grainger Inc',percent:0.14},{symbol:'ROK',name:'Rockwell Automation Inc',percent:0.14},
+  {symbol:'ON',name:'ON Semiconductor Corp',percent:0.13},{symbol:'AZO',name:'AutoZone Inc',percent:0.13},
+  {symbol:'IDXX',name:'IDEXX Laboratories Inc',percent:0.12},{symbol:'ODFL',name:'Old Dominion Freight Line Inc',percent:0.12},
+  {symbol:'WAB',name:'Westinghouse Air Brake Technologies',percent:0.12},{symbol:'ADSK',name:'Autodesk Inc',percent:0.12},
+  {symbol:'BDX',name:'Becton Dickinson & Co',percent:0.11},{symbol:'GRMN',name:'Garmin Ltd',percent:0.11},
+  {symbol:'DHI',name:'DR Horton Inc',percent:0.11},{symbol:'JBL',name:'Jabil Inc',percent:0.11},
+  {symbol:'RSG',name:'Republic Services Inc',percent:0.11},{symbol:'A',name:'Agilent Technologies Inc',percent:0.10},
+  {symbol:'KVUE',name:'Kenvue Inc',percent:0.10},{symbol:'ROP',name:'Roper Technologies Inc',percent:0.10},
+  {symbol:'VMC',name:'Vulcan Materials Co',percent:0.10},{symbol:'STLD',name:'Steel Dynamics Inc',percent:0.10},
+  {symbol:'ADM',name:'Archer-Daniels-Midland Co',percent:0.10},{symbol:'HAL',name:'Halliburton Co',percent:0.09},
+  {symbol:'NTAP',name:'NetApp Inc',percent:0.09},{symbol:'KMB',name:'Kimberly-Clark Corp',percent:0.09},
+  {symbol:'WAT',name:'Waters Corp',percent:0.09},{symbol:'MLM',name:'Martin Marietta Materials Inc',percent:0.09},
+  {symbol:'GEHC',name:'GE HealthCare Technologies Inc',percent:0.08},{symbol:'OTIS',name:'Otis Worldwide Corp',percent:0.08},
+  {symbol:'BIIB',name:'Biogen Inc',percent:0.08},{symbol:'DOV',name:'Dover Corp',percent:0.08},
+  {symbol:'DXCM',name:'Dexcom Inc',percent:0.08},{symbol:'FSLR',name:'First Solar Inc',percent:0.08},
+  {symbol:'RMD',name:'ResMed Inc',percent:0.08},{symbol:'TPR',name:'Tapestry Inc',percent:0.08},
+  {symbol:'WDAY',name:'Workday Inc',percent:0.08},{symbol:'EXPE',name:'Expedia Group Inc',percent:0.07},
+  {symbol:'PPG',name:'PPG Industries Inc',percent:0.07},{symbol:'WSM',name:'Williams-Sonoma Inc',percent:0.07},
+  {symbol:'PHM',name:'PulteGroup Inc',percent:0.07},{symbol:'HSY',name:'Hershey Co',percent:0.07},
+  {symbol:'CTSH',name:'Cognizant Technology Solutions Corp',percent:0.07},{symbol:'XYL',name:'Xylem Inc',percent:0.07},
+  {symbol:'HUBB',name:'Hubbell Inc',percent:0.07},{symbol:'CPRT',name:'Copart Inc',percent:0.07},
+  {symbol:'IR',name:'Ingersoll Rand Inc',percent:0.07},{symbol:'CHRW',name:'CH Robinson Worldwide Inc',percent:0.06},
+  {symbol:'VLTO',name:'Veralto Corp',percent:0.06},{symbol:'DD',name:'DuPont de Nemours Inc',percent:0.06},
+  {symbol:'WST',name:'West Pharmaceutical Services Inc',percent:0.06},{symbol:'EXPD',name:'Expeditors International',percent:0.06},
+  {symbol:'JBHT',name:'JB Hunt Transport Services Inc',percent:0.06},{symbol:'EL',name:'Estee Lauder Cos Inc',percent:0.06},
+  {symbol:'TPL',name:'Texas Pacific Land Corp',percent:0.06},{symbol:'CHD',name:'Church & Dwight Co Inc',percent:0.06},
+  {symbol:'FICO',name:'Fair Isaac Corp',percent:0.06},{symbol:'VRSN',name:'VeriSign Inc',percent:0.06},
+  {symbol:'FFIV',name:'F5 Inc',percent:0.06},{symbol:'LH',name:'Labcorp Holdings Inc',percent:0.06},
+  {symbol:'TSCO',name:'Tractor Supply Co',percent:0.05},{symbol:'STE',name:'STERIS PLC',percent:0.05},
+  {symbol:'PKG',name:'Packaging Corp of America',percent:0.05},{symbol:'CDW',name:'CDW Corp',percent:0.05},
+  {symbol:'AKAM',name:'Akamai Technologies Inc',percent:0.05},{symbol:'CF',name:'CF Industries Holdings Inc',percent:0.05},
+  {symbol:'EFX',name:'Equifax Inc',percent:0.05},{symbol:'INCY',name:'Incyte Corp',percent:0.05},
+  {symbol:'WY',name:'Weyerhaeuser Co',percent:0.05},{symbol:'ALB',name:'Albemarle Corp',percent:0.05},
+  {symbol:'ULTA',name:'ULTA Beauty Inc',percent:0.05},{symbol:'MTD',name:'Mettler-Toledo International Inc',percent:0.05},
+  {symbol:'RL',name:'Ralph Lauren Corp',percent:0.04},{symbol:'GNRC',name:'Generac Holdings Inc',percent:0.04},
+  {symbol:'NDSN',name:'Nordson Corp',percent:0.04},{symbol:'ROL',name:'Rollins Inc',percent:0.04},
+  {symbol:'DECK',name:'Deckers Outdoor Corp',percent:0.04},{symbol:'CSGP',name:'CoStar Group Inc',percent:0.04},
+  {symbol:'GPC',name:'Genuine Parts Co',percent:0.04},{symbol:'COO',name:'Cooper Cos Inc',percent:0.04},
+  {symbol:'MAA',name:'Mid-America Apartment Communities',percent:0.04},{symbol:'SMCI',name:'Super Micro Computer Inc',percent:0.04},
+  {symbol:'PTC',name:'PTC Inc',percent:0.04},{symbol:'LII',name:'Lennox International Inc',percent:0.04},
+  {symbol:'BBY',name:'Best Buy Co Inc',percent:0.04},{symbol:'LULU',name:'Lululemon Athletica Inc',percent:0.04},
+  {symbol:'IEX',name:'IDEX Corp',percent:0.04},{symbol:'MAS',name:'Masco Corp',percent:0.04},
+  {symbol:'RVTY',name:'Revvity Inc',percent:0.03},{symbol:'TRMB',name:'Trimble Inc',percent:0.03},
+  {symbol:'GDDY',name:'GoDaddy Inc',percent:0.03},{symbol:'AVY',name:'Avery Dennison Corp',percent:0.03},
+  {symbol:'TYL',name:'Tyler Technologies Inc',percent:0.03},{symbol:'PNR',name:'Pentair PLC',percent:0.03},
+  {symbol:'ALLE',name:'Allegion plc',percent:0.03},{symbol:'MKC',name:'McCormick & Co Inc',percent:0.03},
+  {symbol:'ZBRA',name:'Zebra Technologies Corp',percent:0.03},{symbol:'IT',name:'Gartner Inc',percent:0.03},
+  {symbol:'ALGN',name:'Align Technology Inc',percent:0.03},{symbol:'CLX',name:'Clorox Co',percent:0.03},
+  {symbol:'SWKS',name:'Skyworks Solutions Inc',percent:0.03},{symbol:'PODD',name:'Insulet Corp',percent:0.03},
+  {symbol:'TECH',name:'Bio-Techne Corp',percent:0.02},{symbol:'CRL',name:'Charles River Laboratories',percent:0.02},
+  {symbol:'BLDR',name:'Builders FirstSource Inc',percent:0.02},{symbol:'TTD',name:'Trade Desk Inc',percent:0.02},
+  {symbol:'POOL',name:'Pool Corp',percent:0.02},{symbol:'AOS',name:'A O Smith Corp',percent:0.02},
+];
+
+const SUPABASE_ETF_URL = 'https://hcjugujmdlzfwdfecnjt.supabase.co/storage/v1/object/public/Portfolio/etf_holdings.json';
+
+async function fetchEtfHoldings() {
+  // Set hardcoded data immediately — dashboard renders without waiting for network
+  state.etfHoldings = { SMH: SMH_HOLDINGS_FALLBACK, SPUS: SPUS_HOLDINGS_FALLBACK };
+  state.etfHoldingsStatus = 'done';
+}
+
+// Background auto-refresh: silently try to pull fresh SPUS CSV via CORS proxy.
+// Runs once on load. No user action needed. Fails silently if blocked.
+async function autoRefreshSpus() {
+  const SPUS_CSV = 'https://www.sp-funds.com/wp-content/uploads/data/TidalFG_Holdings_SPUS.csv';
+  const PROXIES = [
+    `https://corsproxy.io/?url=${encodeURIComponent(SPUS_CSV)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(SPUS_CSV)}`,
+  ];
+  for (const proxy of PROXIES) {
+    try {
+      const r = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) continue;
+      const text = await r.text();
+      const fresh = parseSpusCsv(text);
+      if (fresh && fresh.length > 50) {
+        state.etfHoldings = { ...state.etfHoldings, SPUS: fresh };
+        state.etfHoldingsStatus = 'live';
+        render();
+        return; // success — stop trying proxies
+      }
+    } catch { /* proxy failed, try next */ }
+  }
+  // All proxies failed — hardcoded data is already in state, nothing to do
+}
+
+// ── Manual ETF holdings refresh (browser-only, no terminal) ──────────────
+// Fetches the SPUS CSV directly from SP Funds, parses it in JS,
+// then uploads etf_holdings.json to Supabase. Called by the dashboard button.
+async function refreshEtfHoldingsFromWeb() {
+  const btn = document.getElementById('etf-refresh-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Fetching SPUS…'; }
+
+  try {
+    // ── 1. Fetch SPUS CSV ──────────────────────────────────────────────
+    const SPUS_URL = 'https://www.sp-funds.com/wp-content/uploads/data/TidalFG_Holdings_SPUS.csv';
+    let spusHoldings = null;
+    try {
+      const r = await fetch(SPUS_URL);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const text = await r.text();
+      spusHoldings = parseSpusCsv(text);
+    } catch (e) {
+      console.warn('SPUS direct fetch failed (CORS?):', e.message);
+    }
+
+    // ── 2. Build payload ───────────────────────────────────────────────
+    const payload = {
+      _updated: new Date().toISOString().slice(0, 10),
+      SMH: SMH_HOLDINGS_FALLBACK,
+      ...(spusHoldings ? { SPUS: spusHoldings } : {})
+    };
+
+    if (!spusHoldings) {
+      // CORS blocked — fall back to file-picker so user can select manually
+      if (btn) { btn.disabled = false; btn.textContent = '📂 Select SPUS CSV'; }
+      triggerSpusCsvPicker(payload, btn);
+      return;
+    }
+
+    // ── 3. Upload to Supabase ──────────────────────────────────────────
+    if (btn) btn.textContent = '⏳ Uploading…';
+    await uploadEtfJson(payload);
+
+    state.etfHoldings = { SMH: payload.SMH, SPUS: payload.SPUS || null };
+    state.etfHoldingsStatus = 'done';
+    render();
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Updated'; setTimeout(() => { if(btn) btn.textContent = '⟳ Refresh ETF Holdings'; btn.disabled=false; }, 3000); }
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = '⚠ Failed — try again'; }
+    console.error('ETF refresh failed:', e);
+  }
+}
+
+function parseSpusCsv(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return null;
+  const headers = lines[0].split(',').map(h => h.trim());
+  const tickerIdx  = headers.indexOf('StockTicker');
+  const nameIdx    = headers.indexOf('SecurityName');
+  const weightIdx  = headers.indexOf('Weightings');
+  if (tickerIdx < 0 || weightIdx < 0) return null;
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',');
+    const ticker = (cols[tickerIdx] || '').trim();
+    const pct    = parseFloat((cols[weightIdx] || '0').replace('%', ''));
+    const name   = nameIdx >= 0 ? (cols[nameIdx] || ticker).trim() : ticker;
+    if (!ticker || pct <= 0 || ticker === 'Cash&Other' || ticker.length > 10) continue;
+    rows.push({ symbol: ticker, name, percent: Math.round(pct * 10000) / 10000 });
+  }
+  return rows.sort((a, b) => b.percent - a.percent);
+}
+
+function triggerSpusCsvPicker(payload, btn) {
+  // CORS blocked the direct fetch — let the user download the CSV manually
+  // and pick it via a file input
+  let inp = document.getElementById('spus-csv-input');
+  if (!inp) {
+    inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = '.csv'; inp.id = 'spus-csv-input';
+    inp.style.display = 'none';
+    document.body.appendChild(inp);
+  }
+  inp.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Parsing…'; }
+    const text = await file.text();
+    const spusHoldings = parseSpusCsv(text);
+    if (!spusHoldings || spusHoldings.length === 0) {
+      if (btn) { btn.disabled = false; btn.textContent = '⚠ Could not parse CSV'; }
+      return;
+    }
+    payload.SPUS = spusHoldings;
+    if (btn) btn.textContent = '⏳ Uploading…';
+    await uploadEtfJson(payload);
+    state.etfHoldings = { SMH: payload.SMH, SPUS: spusHoldings };
+    state.etfHoldingsStatus = 'done';
+    render();
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Updated'; setTimeout(() => { if(btn) { btn.textContent = '⟳ Refresh ETF Holdings'; btn.disabled=false; }}, 3000); }
+  };
+  inp.click();
+}
+
+async function uploadEtfJson(payload) {
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjanVndWptZGx6ZndkZmVjbmp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MDkwMjcsImV4cCI6MjA5NjA4NTAyN30.O7G9TlSt0irAe42fOFEPrSR5kynJb-fcJpbd-55kxPk';
+  const url = 'https://hcjugujmdlzfwdfecnjt.supabase.co/storage/v1/object/Portfolio/etf_holdings.json';
+  const r = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'apikey':        SUPABASE_ANON,
+      'Authorization': `Bearer ${SUPABASE_ANON}`,
+      'Content-Type':  'application/json',
+      'x-upsert':      'true',
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!r.ok) throw new Error(`Supabase upload failed: ${r.status}`);
+}
+
 // Auto-load xlsx from Supabase on page open
 async function autoLoadFromSupabase() {
   const info = document.getElementById('fileInfo');
@@ -841,10 +1240,14 @@ async function autoLoadFromSupabase() {
     state.wb = XLSX.read(buf, { type: 'array', cellDates: true });
     info.innerHTML = 'Live from cloud · <strong>Cmd/Ctrl + P</strong> to print or save as PDF';
     await fetchLivePrices();
-    render();
+    await fetchEtfHoldings(); // instant — uses hardcoded data
   } catch {
     info.innerHTML = 'Could not load from cloud — use the button to load locally';
+    return;
   }
+  // Render and background refresh outside the catch so render errors surface properly
+  render();
+  autoRefreshSpus();
 }
 
 // Returns true if US markets are currently open (Mon-Fri, 9:30-16:00 ET)
@@ -1315,6 +1718,218 @@ function renderHoldings(holdings) {
       </div>
     </div>
   `;
+}
+
+// ── ETF Look-Through renderer ─────────────────────────────────────────────
+function renderLookThrough(holdings) {
+  const status = state.etfHoldingsStatus;
+  const etfData = state.etfHoldings || {};
+
+  // Member selector options
+  const memberOptions = ['All Members', ...MEMBERS]
+    .map(m => `<option value="${m}">${m}</option>`).join('');
+
+  // Selected member from a stable DOM element (persisted between renders)
+  const selectedMember = document.getElementById('lt-member-select')?.value || 'All Members';
+
+  // ── Compute ETF market values for selected member/all ──
+  function getMV(sym) {
+    if (selectedMember === 'All Members') {
+      return holdings.byTicker[sym]?.mv || 0;
+    }
+    const pos = holdings.members[selectedMember]?.positions?.find(p => p.symbol === sym);
+    return pos?.mv || 0;
+  }
+
+  const totalPortfolioMV = selectedMember === 'All Members'
+    ? (holdings.total?.mv || 1)
+    : (holdings.members[selectedMember]?.mv || 1);
+
+  // ── Build look-through rows ──
+  // Map: ticker → { name, smhExposure, spusExposure, iauExposure, total }
+  const exposure = {};
+
+  function addExposure(sym, etfMV) {
+    const constituents = etfData[sym];
+    if (!constituents) return;
+    for (const c of constituents) {
+      const ticker = c.symbol?.replace(' US', '').trim() || c.name;
+      if (!ticker || c.assetClass === 'Cash' || ticker.startsWith('-')) continue;
+      const pct = (c.percent ?? c.weight ?? 0) / 100;
+      if (pct <= 0) continue;
+      if (!exposure[ticker]) exposure[ticker] = { name: c.name || ticker, smh: 0, spus: 0, total: 0 };
+      exposure[ticker][sym.toLowerCase()] = (exposure[ticker][sym.toLowerCase()] || 0) + etfMV * pct;
+      exposure[ticker].total += etfMV * pct;
+    }
+  }
+
+  addExposure('SMH',  getMV('SMH'));
+  addExposure('SPUS', getMV('SPUS'));
+
+  // Sort by total exposure
+  const sorted = Object.entries(exposure)
+    .sort((a, b) => b[1].total - a[1].total);
+
+  // ── Status line ──
+  let statusHtml = '';
+
+  const smhCount  = etfData.SMH?.length  || 0;
+  const spusCount = etfData.SPUS?.length || 0;
+  if (status === 'idle' || status === 'loading') {
+    statusHtml = `<span class="lookthrough-status loading">⏳ Loading…</span>`;
+  } else {
+    const spusLabel = status === 'live'
+      ? `SPUS ${spusCount} stocks (live)`
+      : `SPUS ${spusCount} stocks (Jun 2026)`;
+    statusHtml = `<span class="lookthrough-status">✓ SMH ${smhCount} stocks · ${spusLabel}</span>`;
+  }
+
+  // ── Table rows ──
+  const DEFAULT_SHOW = 30;
+  const showAll = document.getElementById('lt-show-all')?.dataset.show === 'true';
+  const visibleRows = showAll ? sorted : sorted.slice(0, DEFAULT_SHOW);
+  const hasMore = sorted.length > DEFAULT_SHOW;
+
+  function barHtml(pct) {
+    const w = Math.min(pct * 100 * 4, 100); // scale so 1% exposure = 4% bar width
+    return `<div class="lookthrough-bar-wrap"><div class="lookthrough-bar" style="width:${w}%"></div></div>`;
+  }
+
+  const tableRows = visibleRows.map(([ticker, v], i) => {
+    const pctOfPortfolio = totalPortfolioMV > 0 ? v.total / totalPortfolioMV : 0;
+    return `<tr>
+      <td style="color:var(--muted);font-size:12px">${i + 1}</td>
+      <td><strong>${ticker}</strong></td>
+      <td style="color:var(--ink-soft);font-size:13px">${v.name || ''}</td>
+      <td class="num" style="font-weight:700">${(pctOfPortfolio * 100).toFixed(2)}%</td>
+      <td class="num">
+        ${v.smh > 0.5 ? `<div>${FMT_$(v.smh)}</div><div><span class="lookthrough-tag tag-smh">SMH</span></div>` : '–'}
+      </td>
+      <td class="num">
+        ${v.spus > 0.5 ? `<div>${FMT_$(v.spus)}</div><div><span class="lookthrough-tag tag-spus">SPUS</span></div>` : '–'}
+      </td>
+      <td class="num" style="font-weight:700">${FMT_$(v.total)}</td>
+    </tr>`;
+  }).join('');
+
+
+  // Stash top-10 for the post-render donut
+  const top10 = sorted.slice(0, 10).map(([ticker, v]) => ({
+    ticker,
+    pct: totalPortfolioMV > 0 ? (v.total / totalPortfolioMV) * 100 : 0,
+  }));
+  const othersSum = sorted.slice(10).reduce((s, [, v]) =>
+    s + (totalPortfolioMV > 0 ? (v.total / totalPortfolioMV) * 100 : 0), 0);
+  window._ltDonutData = { top10, othersSum };
+
+  const showMoreBtn = (!showAll && hasMore) ? `
+    <div class="lt-show-more">
+      <button id="lt-show-all" data-show="false"
+        onclick="this.dataset.show='true'; this.closest('.section').querySelector('tbody').innerHTML = ''; render()">
+        Show all ${sorted.length} stocks ↓
+      </button>
+    </div>` : '';
+
+  return `
+    <div class="section">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <h2 style="margin:0">What We Really Own</h2>
+        <button id="etf-refresh-btn" class="etf-refresh-btn"
+          onclick="refreshEtfHoldingsFromWeb()">⟳ Refresh ETF Holdings</button>
+      </div>
+      <div class="section-sub">Look-through the ETF wrappers to see the actual underlying stocks — weighted by your family's position size in each ETF.</div>
+      <div class="lookthrough-controls">
+        <label for="lt-member-select">View for</label>
+        <select id="lt-member-select" onchange="render()">
+          ${['All Members', ...MEMBERS].map(m =>
+            `<option value="${m}"${m === selectedMember ? ' selected' : ''}>${m}</option>`
+          ).join('')}
+        </select>
+        ${statusHtml}
+      </div>
+
+      <!-- Donut chart: top 10 by portfolio % -->
+      <div class="lt-donut-wrap">
+        <canvas id="lt-donut-canvas" height="280"></canvas>
+        <div class="lt-donut-legend" id="lt-donut-legend"></div>
+      </div>
+
+      <div class="table-card holdings-table-card">
+        <table>
+          <thead><tr>
+            <th style="width:32px">#</th>
+            <th style="width:80px">Ticker</th>
+            <th style="width:220px">Company</th>
+            <th class="num" style="width:130px">% of Portfolio</th>
+            <th class="num" style="width:120px">via SMH</th>
+            <th class="num" style="width:120px">via SPUS</th>
+            <th class="num">Total Exposure</th>
+          </tr></thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+      </div>
+      ${showMoreBtn}
+    </div>
+  `;
+}
+
+let _ltDonutChart = null;
+function renderLookThroughChart() {
+  const canvas = document.getElementById('lt-donut-canvas');
+  const legendEl = document.getElementById('lt-donut-legend');
+  if (!canvas || !window._ltDonutData) return;
+
+  // Destroy previous instance
+  if (_ltDonutChart) { try { _ltDonutChart.destroy(); } catch(e) {} _ltDonutChart = null; }
+
+  const { top10, othersSum } = window._ltDonutData;
+  const tc = themeColors();
+
+  const PALETTE = [
+    '#6366f1','#06b6d4','#10b981','#f59e0b','#ef4444',
+    '#8b5cf6','#ec4899','#14b8a6','#f97316','#84cc16',
+  ];
+  const OTHERS_COLOR = tc.muted || '#aaa';
+
+  const labels  = [...top10.map(d => d.ticker), 'Others'];
+  const values  = [...top10.map(d => d.pct), othersSum];
+  const colors  = [...PALETTE.slice(0, top10.length), OTHERS_COLOR];
+
+  _ltDonutChart = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{ data: values, backgroundColor: colors, borderWidth: 2,
+                   borderColor: tc.surface || '#fff', hoverOffset: 6 }],
+    },
+    options: {
+      cutout: '68%',
+      animation: { duration: 400 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(2)}%`,
+          },
+        },
+      },
+    },
+  });
+
+  // Custom legend
+  legendEl.innerHTML = top10.map((d, i) => `
+    <div class="lt-legend-item">
+      <span class="lt-legend-dot" style="background:${PALETTE[i]}"></span>
+      <span class="lt-legend-ticker">${d.ticker}</span>
+      <span class="lt-legend-pct">${d.pct.toFixed(2)}%</span>
+    </div>`).join('') + `
+    <div class="lt-legend-item">
+      <span class="lt-legend-dot" style="background:${OTHERS_COLOR}"></span>
+      <span class="lt-legend-ticker" style="color:var(--muted)">Others</span>
+      <span class="lt-legend-pct">${othersSum.toFixed(2)}%</span>
+    </div>`;
 }
 
 function renderFooter() {
@@ -2049,11 +2664,12 @@ function render() {
     ${renderMemberCompare()}
     ${renderAllocation()}
     ${renderHoldings(holdings)}
+    ${renderLookThrough(holdings)}
     ${renderBenchmark()}
     ${renderFooter()}
   `;
   renderCharts(perf, holdings, txs);
-  setTimeout(() => { renderBenchmarkChart(); }, 10);
+  setTimeout(() => { renderBenchmarkChart(); renderLookThroughChart(); }, 10);
 
   // Count-up animation on headline KPIs
   document.querySelectorAll('.kpi-value[data-animate]').forEach((el, idx) => {
