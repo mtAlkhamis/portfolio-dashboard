@@ -695,9 +695,10 @@
     gap: 32px;
     margin: 20px 0 24px;
     padding: 20px 24px;
-    background: var(--surface);
+    background: var(--paper);
     border: 1px solid var(--line);
     border-radius: 12px;
+    box-shadow: var(--shadow-card);
   }
   #lt-donut-canvas {
     flex: 0 0 auto;
@@ -1802,13 +1803,13 @@ function renderLookThrough(holdings) {
       <td><strong>${ticker}</strong></td>
       <td style="color:var(--ink-soft);font-size:13px">${v.name || ''}</td>
       <td class="num" style="font-weight:700">${(pctOfPortfolio * 100).toFixed(2)}%</td>
+      <td class="num" style="font-weight:700">${FMT_$(v.total)}</td>
       <td class="num">
         ${v.smh > 0.5 ? `<div>${FMT_$(v.smh)}</div><div><span class="lookthrough-tag tag-smh">SMH</span></div>` : '–'}
       </td>
       <td class="num">
         ${v.spus > 0.5 ? `<div>${FMT_$(v.spus)}</div><div><span class="lookthrough-tag tag-spus">SPUS</span></div>` : '–'}
       </td>
-      <td class="num" style="font-weight:700">${FMT_$(v.total)}</td>
     </tr>`;
   }).join('');
 
@@ -1859,11 +1860,11 @@ function renderLookThrough(holdings) {
           <thead><tr>
             <th style="width:32px">#</th>
             <th style="width:80px">Ticker</th>
-            <th style="width:220px">Company</th>
-            <th class="num" style="width:130px">% of Portfolio</th>
+            <th style="width:150px">Company</th>
+            <th class="num" style="width:120px">% of Portfolio</th>
+            <th class="num" style="width:120px">Total Exposure</th>
             <th class="num" style="width:120px">via SMH</th>
             <th class="num" style="width:120px">via SPUS</th>
-            <th class="num">Total Exposure</th>
           </tr></thead>
           <tbody>
             ${tableRows}
