@@ -892,6 +892,7 @@ const COLORS_ASSET  = ["#2D6A4F", "#B8924E", "#74A57F", "#B36F4D", "#5C3D2E", "#
 let state = { wb: null, fileName: null, livePrices: {}, etfHoldings: {}, etfHoldingsStatus: 'idle',
               holdingsSort: { col: 'mv', dir: 'desc' },
               ltSort: { col: 'total', dir: 'desc' },
+              holdingsExpanded: false,
               _holdings: null, _txs: null, _perf: null };
 
 document.getElementById('fileInput').addEventListener('change', async (e) => {
@@ -1690,6 +1691,11 @@ function setLtSort(col) {
   render();
 }
 
+function toggleHoldingsExpand() {
+  state.holdingsExpanded = !state.holdingsExpanded;
+  render();
+}
+
 function setHoldingsSort(col) {
   if (state.holdingsSort.col === col) {
     state.holdingsSort.dir = state.holdingsSort.dir === 'desc' ? 'asc' : 'desc';
@@ -1726,9 +1732,18 @@ function renderHoldings(holdings) {
       if (col === 'symbol') return dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
       return dir === 'asc' ? va - vb : vb - va;
     });
-  const tickers = [...stocks, ...cash];
 
+  // Compute totalDayPnl over ALL stocks (not just visible rows)
   let totalDayPnl = 0;
+  stocks.forEach(([sym, v]) => {
+    const lp = state.livePrices?.[sym];
+    if (lp != null) totalDayPnl += v.shares * (lp.price - lp.prevClose);
+  });
+
+  // Visible rows: top 10 stocks when collapsed, all when expanded; cash always shown
+  const COLLAPSE_AT = 10;
+  const visibleStocks = state.holdingsExpanded ? stocks : stocks.slice(0, COLLAPSE_AT);
+  const tickers = [...visibleStocks, ...cash];
 
   const rows = tickers.map(([sym, v]) => {
     const gain    = v.gain || 0;
@@ -1741,7 +1756,6 @@ function renderHoldings(holdings) {
     const lp         = state.livePrices?.[sym];
     const dayChgPct  = lp?.changePct ?? null;
     const dayPnl     = (sym !== 'Cash' && lp != null) ? v.shares * (lp.price - lp.prevClose) : null;
-    if (dayPnl != null) totalDayPnl += dayPnl;
     const dayCls     = (dayChgPct ?? 0) >= 0 ? 'pos' : 'neg';
 
     // Per-share daily price change
@@ -1811,6 +1825,18 @@ function renderHoldings(holdings) {
           </tbody>
         </table>
       </div>
+      ${stocks.length > COLLAPSE_AT ? `
+        <button onclick="toggleHoldingsExpand()" style="
+          display:block; margin: 12px auto 0; padding: 7px 20px;
+          background:transparent; border:1px solid var(--line);
+          border-radius:20px; color:var(--muted); font-size:13px;
+          cursor:pointer; transition: border-color 0.15s, color 0.15s;"
+          onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+          onmouseout="this.style.borderColor='var(--line)';this.style.color='var(--muted)'">
+          ${state.holdingsExpanded
+            ? '↑ Show top 10 only'
+            : `↓ Show all ${stocks.length} holdings`}
+        </button>` : ''}
     </div>
   `;
 }
@@ -1955,7 +1981,8 @@ function renderLookThrough(holdings) {
   }));
   const othersSum = byWeight.slice(10).reduce((s, [, v]) =>
     s + (totalPortfolioMV > 0 ? (v.total / totalPortfolioMV) * 100 : 0), 0);
-  _ltDonutData = { top10, othersSum };
+  const etfTotalMV = byWeight.reduce((s, [, v]) => s + v.total, 0);
+  _ltDonutData = { top10, othersSum, etfTotalMV };
 
   return `
     <div class="section">
@@ -2037,7 +2064,7 @@ function renderLookThroughChart() {
   // Destroy previous instance
   if (_ltDonutChart) { try { _ltDonutChart.destroy(); } catch(e) {} _ltDonutChart = null; }
 
-  const { top10, othersSum } = _ltDonutData;
+  const { top10, othersSum, etfTotalMV } = _ltDonutData;
   const tc = themeColors();
 
   const PALETTE = [
@@ -2055,11 +2082,11 @@ function renderLookThroughChart() {
     data: {
       labels,
       datasets: [{ data: values, backgroundColor: colors, borderWidth: 2,
-                   borderColor: tc.surface || '#fff', hoverOffset: 6 }],
+                   borderColor: tc.paper, hoverOffset: 6 }],
     },
     options: {
       cutout: '68%',
-      animation: { duration: 400 },
+      animation: { animateRotate: true, animateScale: false, duration: 900, easing: 'easeOutQuart' },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -2101,7 +2128,9 @@ const donutCenterPlugin = {
     if (!opts || !opts.enabled) return;
     const { ctx, chartArea } = chart;
     const tc = themeColors();
-    const total = chart.data.datasets[0].data.reduce((a, b) => a + (Number(b) || 0), 0);
+    const total = opts.customTotal !== undefined
+      ? opts.customTotal
+      : chart.data.datasets[0].data.reduce((a, b) => a + (Number(b) || 0), 0);
     const cx = (chartArea.left + chartArea.right) / 2;
     const cy = (chartArea.top + chartArea.bottom) / 2;
     ctx.save();
@@ -2110,7 +2139,7 @@ const donutCenterPlugin = {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.letterSpacing = '1.5px';
-    ctx.fillText('TOTAL VALUE', cx, cy - 18);
+    ctx.fillText(opts.label || 'TOTAL VALUE', cx, cy - 18);
     ctx.fillStyle = tc.ink;
     ctx.font = '700 24px "Playfair Display", Georgia, serif';
     ctx.fillText('$' + Math.round(total).toLocaleString(), cx, cy + 8);
