@@ -1211,24 +1211,14 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
 
 // ── Supabase config ───────────────────────────────────────────────────────
 const SUPABASE_XLSX_URL   = 'https://hcjugujmdlzfwdfecnjt.supabase.co/storage/v1/object/public/Portfolio/Family%20Portfolio%20Dashboard.xlsx';
-const FINNHUB_KEY  = 'd8gutopr01qhjpmpqt00d8gutopr01qhjpmpqt0g';
+const TWELVE_DATA_KEY = '7eb290ab949b4a468a1838d08232feb1';
 const TICKER_MAP   = {
-  'SPUS':   'SPUS',
-  'SMH':    'SMH',
-  'IAU':    'IAU',
-  'HLAL':   'HLAL',
-  'ISDU.L': 'LSE:ISDU',
-  'ISDE.L': 'LSE:ISDE'
+  'SPUS': 'SPUS',
+  'SMH':  'SMH'
 };
 
-// Fetch live prices. During pre-market and after-hours we try Yahoo Finance
-// first (chart API, includePrePost=true) since Finnhub's free-tier quote
-// endpoint only returns the previous close during extended-hours sessions.
-// Yahoo Finance is tried with a 4-second timeout; on CORS failure or timeout
-// we fall back to Finnhub so the dashboard always shows something.
-let _fetchingPrices = false; // lock to prevent concurrent calls
+let _fetchingPrices = false;
 
-// Labels shown in the price tag per session
 const SESSION_LABEL = {
   open:       '● Prices live',
   premarket:  '◑ Pre-market',
@@ -1236,95 +1226,36 @@ const SESSION_LABEL = {
   closed:     '○ Last close',
 };
 
-// Yahoo Finance symbol overrides (US tickers are identical; LSE needs suffix)
-const YAHOO_MAP = {
-  'SPUS':   'SPUS',
-  'SMH':    'SMH',
-  'IAU':    'IAU',
-  'HLAL':   'HLAL',
-  'ISDU.L': 'ISDU.L',
-  'ISDE.L': 'ISDE.L',
-};
-
-async function fetchYahooExtendedPrice(ticker, ms) {
-  const yhSym = YAHOO_MAP[ticker];
-  if (!yhSym) return null;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
-  try {
-    // Yahoo Finance chart API — returns 5-min bars including pre/post market
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yhSym}` +
-                `?range=1d&interval=5m&includePrePost=true&corsDomain=finance.yahoo.com`;
-    const r = await fetch(url, {
-      signal: controller.signal,
-      headers: { 'Accept': 'application/json' },
-    });
-    if (!r.ok) {
-      console.warn(`[yahoo] ${ticker}: HTTP ${r.status}`);
-      return null;
-    }
-    const d = await r.json();
-    const result = d.chart?.result?.[0];
-    if (!result) { console.warn(`[yahoo] ${ticker}: no result`); return null; }
-    const closes     = result.indicators?.quote?.[0]?.close || [];
-    const meta       = result.meta;
-    // Walk backwards to find the most recent non-null bar close
-    let lastPrice = null;
-    for (let i = closes.length - 1; i >= 0; i--) {
-      if (closes[i] != null) { lastPrice = closes[i]; break; }
-    }
-    if (!lastPrice) { console.warn(`[yahoo] ${ticker}: no price in bars`); return null; }
-    const prevClose = meta.chartPreviousClose ?? meta.previousClose ?? 0;
-    console.log(`[yahoo] ${ticker}: ${lastPrice.toFixed(2)} (prev ${prevClose.toFixed(2)}, session ${ms})`);
-    return {
-      price:      lastPrice,
-      prevClose,
-      changePct:  prevClose ? (lastPrice - prevClose) / prevClose : 0,
-      isExtended: Math.abs(lastPrice - prevClose) > 0.001,
-      session:    ms,
-    };
-  } catch (e) {
-    console.warn(`[yahoo] ${ticker}: ${e.message || e}`);
-    return null;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
 async function fetchLivePrices() {
   if (_fetchingPrices) return;
   _fetchingPrices = true;
   const tag = document.getElementById('priceTag');
   const ms  = detectMarketState();
-  const useYahoo = ms === 'premarket' || ms === 'afterhours';
+
   try {
     const results = {};
     await Promise.all(Object.keys(TICKER_MAP).map(async (ticker) => {
-      const symbol = TICKER_MAP[ticker];
       try {
-        // Extended hours: try Yahoo first, fall back to Finnhub
-        if (useYahoo) {
-          const yp = await fetchYahooExtendedPrice(ticker, ms);
-          if (yp) { results[ticker] = yp; return; }
-          console.log(`[prices] ${ticker}: Yahoo failed, falling back to Finnhub`);
-        }
-        // Regular session (or Yahoo fallback)
-        const r = await fetch(
-          `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_KEY}`
-        );
+        const url = `https://api.twelvedata.com/quote?symbol=${ticker}&apikey=${TWELVE_DATA_KEY}&extended_hours=true`;
+        const r = await fetch(url);
         const d = await r.json();
-        if (d.c > 0) {
-          const isExt = useYahoo && Math.abs(d.c - d.pc) > 0.001;
-          console.log(`[finnhub] ${ticker}: ${d.c} (prev ${d.pc}, extended=${isExt})`);
-          results[ticker] = {
-            price:      d.c,
-            prevClose:  d.pc,
-            changePct:  d.pc ? (d.c - d.pc) / d.pc : 0,
-            isExtended: isExt,
-            session:    ms,
-          };
+        if (d.status === 'error') {
+          console.warn(`[twelvedata] ${ticker}: ${d.message}`);
+          return;
         }
-      } catch {}
+        // During extended hours, use extended_hours.price if available
+        const extHours  = d.extended_hours;
+        const isExt     = !!(extHours && extHours.price && (ms === 'premarket' || ms === 'afterhours'));
+        const price     = isExt ? parseFloat(extHours.price) : parseFloat(d.close);
+        const prevClose = parseFloat(d.previous_close);
+        const changePct = isExt
+          ? parseFloat(extHours.percent_change) / 100
+          : parseFloat(d.percent_change) / 100;
+        console.log(`[twelvedata] ${ticker}: ${price} (prev ${prevClose}, ext=${isExt}, session=${ms})`);
+        results[ticker] = { price, prevClose, changePct, isExtended: isExt, session: ms };
+      } catch (e) {
+        console.error(`[prices] ${ticker} fetch error:`, e.message || e);
+      }
     }));
     if (Object.keys(results).length > 0) {
       Object.assign(state.livePrices, results);
@@ -1366,7 +1297,7 @@ async function fetchEtfConstituentPrices() {
 
   await Promise.all(top60.map(async ticker => {
     try {
-      const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${FINNHUB_KEY}`);
+      const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=d8gutopr01qhjpmpqt00d8gutopr01qhjpmpqt0g`);
       const d = await r.json();
       if (d.c > 0) state.livePrices[ticker] = {
         price: d.c, prevClose: d.pc, changePct: d.pc ? (d.c - d.pc) / d.pc : 0
