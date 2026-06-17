@@ -96,232 +96,6 @@
     --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.35);
     --shadow-card-hover: 0 4px 8px rgba(0, 0, 0, 0.35), 0 12px 28px rgba(0, 0, 0, 0.50);
   }
-  /* ── Market-state themes ──────────────────────────────────────────────
-     Applied via data-market="premarket|open|afterhours|closed" on <html>.
-     "open" needs no override — the default palette is used.
-     Each state has a light and dark variant matching the base dark-mode
-     selector pattern above.                                              */
-
-  /* — Pre-market ——————————————————————————————————————————— */
-  :root[data-market="premarket"] {
-    --bg:            #EBF3FB;
-    --paper:         #F5F9FE;
-    --ink:           #042C53;
-    --ink-soft:      #185FA5;
-    --muted:         #5A8FCC;
-    --line:          #B5D4F4;
-    --line-soft:     #D6EAFB;
-    --accent:        #185FA5;
-    --accent-soft:   #D6EAFB;
-    --gold:          #378ADD;
-    --pos-bar-start: #5A8FCC;
-    --pos-bar-end:   #185FA5;
-    --cash-bar-start:#85B7EB;
-    --cash-bar-end:  #378ADD;
-    --shadow-card: 0 1px 2px rgba(4,44,83,0.06), 0 4px 16px rgba(4,44,83,0.08);
-    --shadow-card-hover: 0 4px 8px rgba(4,44,83,0.10), 0 12px 28px rgba(4,44,83,0.14);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"])[data-market="premarket"] {
-      --bg:            #071629;
-      --paper:         #0C2240;
-      --ink:           #C8D8F0;
-      --ink-soft:      #85B7EB;
-      --muted:         #4a7aaa;
-      --line:          #1a3a6a;
-      --line-soft:     #12284a;
-      --accent:        #378ADD;
-      --accent-soft:   #0d2040;
-      --gold:          #85B7EB;
-      --pos-bar-start: #2E6DB8;
-      --pos-bar-end:   #0C447C;
-      --cash-bar-start:#4A8FD4;
-      --cash-bar-end:  #185FA5;
-      --shadow-card: 0 1px 2px rgba(0,0,0,0.30), 0 4px 16px rgba(0,0,0,0.40);
-      --shadow-card-hover: 0 4px 8px rgba(0,0,0,0.40), 0 12px 28px rgba(0,0,0,0.55);
-    }
-  }
-  :root[data-theme="dark"][data-market="premarket"] {
-    --bg:            #071629;
-    --paper:         #0C2240;
-    --ink:           #C8D8F0;
-    --ink-soft:      #85B7EB;
-    --muted:         #4a7aaa;
-    --line:          #1a3a6a;
-    --line-soft:     #12284a;
-    --accent:        #378ADD;
-    --accent-soft:   #0d2040;
-    --gold:          #85B7EB;
-    --pos-bar-start: #2E6DB8;
-    --pos-bar-end:   #0C447C;
-    --cash-bar-start:#4A8FD4;
-    --cash-bar-end:  #185FA5;
-    --shadow-card: 0 1px 2px rgba(0,0,0,0.30), 0 4px 16px rgba(0,0,0,0.40);
-    --shadow-card-hover: 0 4px 8px rgba(0,0,0,0.40), 0 12px 28px rgba(0,0,0,0.55);
-  }
-
-  /* — After-hours —————————————————————————————————————————— */
-  :root[data-market="afterhours"] {
-    --bg:            #FBF5E8;
-    --paper:         #FEFAF2;
-    --ink:           #412402;
-    --ink-soft:      #854F0B;
-    --muted:         #BA7517;
-    --line:          #FAC775;
-    --line-soft:     #FAE8C0;
-    --accent:        #854F0B;
-    --accent-soft:   #FAEEDA;
-    --gold:          #BA7517;
-    --pos-bar-start: #EF9F27;
-    --pos-bar-end:   #BA7517;
-    --cash-bar-start:#FAC775;
-    --cash-bar-end:  #EF9F27;
-    --shadow-card: 0 1px 2px rgba(65,36,2,0.06), 0 4px 16px rgba(65,36,2,0.08);
-    --shadow-card-hover: 0 4px 8px rgba(65,36,2,0.10), 0 12px 28px rgba(65,36,2,0.14);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"])[data-market="afterhours"] {
-      --bg:            #1c1200;
-      --paper:         #261a00;
-      --ink:           #FAC775;
-      --ink-soft:      #EF9F27;
-      --muted:         #7a5a20;
-      --line:          #4a3410;
-      --line-soft:     #2e2008;
-      --accent:        #EF9F27;
-      --accent-soft:   #2a1f08;
-      --gold:          #FAC775;
-      --pos-bar-start: #C07A20;
-      --pos-bar-end:   #854F0B;
-      --cash-bar-start:#EF9F27;
-      --cash-bar-end:  #BA7517;
-      --shadow-card: 0 1px 2px rgba(0,0,0,0.30), 0 4px 16px rgba(0,0,0,0.40);
-      --shadow-card-hover: 0 4px 8px rgba(0,0,0,0.40), 0 12px 28px rgba(0,0,0,0.55);
-    }
-  }
-  :root[data-theme="dark"][data-market="afterhours"] {
-    --bg:            #1c1200;
-    --paper:         #261a00;
-    --ink:           #FAC775;
-    --ink-soft:      #EF9F27;
-    --muted:         #7a5a20;
-    --line:          #4a3410;
-    --line-soft:     #2e2008;
-    --accent:        #EF9F27;
-    --accent-soft:   #2a1f08;
-    --gold:          #FAC775;
-    --pos-bar-start: #C07A20;
-    --pos-bar-end:   #854F0B;
-    --cash-bar-start:#EF9F27;
-    --cash-bar-end:  #BA7517;
-    --shadow-card: 0 1px 2px rgba(0,0,0,0.30), 0 4px 16px rgba(0,0,0,0.40);
-    --shadow-card-hover: 0 4px 8px rgba(0,0,0,0.40), 0 12px 28px rgba(0,0,0,0.55);
-  }
-
-  /* — Closed ——————————————————————————————————————————————— */
-  :root[data-market="closed"] {
-    --bg:            #F1EFE8;
-    --paper:         #F8F6F0;
-    --ink:           #2C2C2A;
-    --ink-soft:      #5F5E5A;
-    --muted:         #888780;
-    --line:          #D3D1C7;
-    --line-soft:     #E8E6DF;
-    --accent:        #5F5E5A;
-    --accent-soft:   #E8E6DF;
-    --gold:          #888780;
-    --pos-bar-start: #888780;
-    --pos-bar-end:   #5F5E5A;
-    --cash-bar-start:#B4B2A9;
-    --cash-bar-end:  #888780;
-    --shadow-card: 0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05);
-    --shadow-card-hover: 0 4px 8px rgba(0,0,0,0.06), 0 12px 28px rgba(0,0,0,0.09);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"])[data-market="closed"] {
-      --bg:            #111111;
-      --paper:         #1a1a1a;
-      --ink:           #999999;
-      --ink-soft:      #666666;
-      --muted:         #444444;
-      --line:          #2a2a2a;
-      --line-soft:     #222222;
-      --accent:        #555555;
-      --accent-soft:   #222222;
-      --gold:          #555555;
-      --pos-bar-start: #666666;
-      --pos-bar-end:   #444444;
-      --cash-bar-start:#888780;
-      --cash-bar-end:  #666666;
-      --shadow-card: 0 1px 2px rgba(0,0,0,0.30), 0 4px 16px rgba(0,0,0,0.40);
-      --shadow-card-hover: 0 4px 8px rgba(0,0,0,0.40), 0 12px 28px rgba(0,0,0,0.55);
-    }
-  }
-  :root[data-theme="dark"][data-market="closed"] {
-    --bg:            #111111;
-    --paper:         #1a1a1a;
-    --ink:           #999999;
-    --ink-soft:      #666666;
-    --muted:         #444444;
-    --line:          #2a2a2a;
-    --line-soft:     #222222;
-    --accent:        #555555;
-    --accent-soft:   #222222;
-    --gold:          #555555;
-    --pos-bar-start: #666666;
-    --pos-bar-end:   #444444;
-    --cash-bar-start:#888780;
-    --cash-bar-end:  #666666;
-    --shadow-card: 0 1px 2px rgba(0,0,0,0.30), 0 4px 16px rgba(0,0,0,0.40);
-    --shadow-card-hover: 0 4px 8px rgba(0,0,0,0.40), 0 12px 28px rgba(0,0,0,0.55);
-  }
-
-  /* ── Market state badge ─────────────────────────────────────────────── */
-  .market-state-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    padding: 3px 9px;
-    border-radius: 20px;
-    vertical-align: middle;
-    margin-left: 10px;
-  }
-  .market-state-badge .ms-dot {
-    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
-  }
-  /* Light badge colours */
-  .ms-open       { background: #DDE9D4; color: #1F5C3E; }
-  .ms-open .ms-dot { background: #2D6A4F; }
-  .ms-premarket  { background: #B5D4F4; color: #0C447C; }
-  .ms-premarket .ms-dot { background: #378ADD; }
-  .ms-afterhours { background: #FAC775; color: #633806; }
-  .ms-afterhours .ms-dot { background: #BA7517; }
-  .ms-closed     { background: #D3D1C7; color: #444441; }
-  .ms-closed .ms-dot { background: #888780; }
-  /* Dark badge colours */
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .ms-open       { background: #1F3D2B; color: #9CD4B0; }
-    :root:not([data-theme="light"]) .ms-open .ms-dot { background: #6FBE92; }
-    :root:not([data-theme="light"]) .ms-premarket  { background: #1a3a6a; color: #85B7EB; }
-    :root:not([data-theme="light"]) .ms-premarket .ms-dot { background: #378ADD; }
-    :root:not([data-theme="light"]) .ms-afterhours { background: #3d2c0e; color: #FAC775; }
-    :root:not([data-theme="light"]) .ms-afterhours .ms-dot { background: #EF9F27; }
-    :root:not([data-theme="light"]) .ms-closed     { background: #2a2a2a; color: #888; }
-    :root:not([data-theme="light"]) .ms-closed .ms-dot { background: #555; }
-  }
-  :root[data-theme="dark"] .ms-open       { background: #1F3D2B; color: #9CD4B0; }
-  :root[data-theme="dark"] .ms-open .ms-dot { background: #6FBE92; }
-  :root[data-theme="dark"] .ms-premarket  { background: #1a3a6a; color: #85B7EB; }
-  :root[data-theme="dark"] .ms-premarket .ms-dot { background: #378ADD; }
-  :root[data-theme="dark"] .ms-afterhours { background: #3d2c0e; color: #FAC775; }
-  :root[data-theme="dark"] .ms-afterhours .ms-dot { background: #EF9F27; }
-  :root[data-theme="dark"] .ms-closed     { background: #2a2a2a; color: #888; }
-  :root[data-theme="dark"] .ms-closed .ms-dot { background: #555; }
-
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0;
@@ -1043,31 +817,6 @@ function setThemePref(pref) {
 // Apply theme as early as possible to avoid a light → dark flash.
 applyTheme(currentThemePref());
 
-// ─── Market state detection ──────────────────────────────────────────
-// Detects the current US equity session from ET clock time and sets
-// data-market="premarket|open|afterhours|closed" on <html>.
-// The CSS variable overrides above use this attribute to swap palettes.
-function detectMarketState() {
-  const etStr = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
-  const et    = new Date(etStr);
-  const day   = et.getDay();            // 0=Sun, 6=Sat
-  const mins  = et.getHours() * 60 + et.getMinutes();
-  if (day === 0 || day === 6) return 'closed';   // weekend
-  if (mins >= 240  && mins < 570)  return 'premarket';   // 4:00–9:30 AM
-  if (mins >= 570  && mins < 960)  return 'open';        // 9:30 AM–4:00 PM
-  if (mins >= 960  && mins < 1200) return 'afterhours';  // 4:00–8:00 PM
-  return 'closed';                                       // 8:00 PM–4:00 AM
-}
-function applyMarketState() {
-  const prev = document.documentElement.getAttribute('data-market');
-  const next = detectMarketState();
-  document.documentElement.setAttribute('data-market', next);
-  // Re-render charts if the session changed (they bake in themeColors() at construction)
-  if (prev && prev !== next && typeof state !== 'undefined' && state.wb) rerenderChartsOnly();
-}
-applyMarketState();
-// Re-check every minute so the theme transitions at session boundaries
-setInterval(applyMarketState, 60000);
 // React to OS theme changes when the user is on Auto.
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
   if (currentThemePref() === 'auto' && typeof state !== 'undefined' && state.wb) rerenderChartsOnly();
@@ -1117,7 +866,7 @@ function rerenderChartsOnly() {
   const txs = parseTransactions();
   const perf = computePerformance(txs, holdings);
   renderCharts(perf, holdings, txs);
-  setTimeout(() => { renderBenchmarkChart(); renderLookThroughChart(); }, 10);
+  setTimeout(() => { renderBenchmarkChart(); }, 10);
 }
 
 // Accounting-style number formatters: negatives shown in red parentheses,
@@ -1152,45 +901,8 @@ const FMT_NUM = v => {
 
 // 7-member layout after the TMI split into Talal/Mohammad/Ibrahim.
 const MEMBERS = ["Madi", "Mama", "Talal", "Mohammad", "Ibrahim", "Aisha", "Sami"];
-// Session-aware colour palettes. Each market state gets its own
-// visual identity — open keeps the original earth-green tones.
-const _PALETTES = {
-  open: {
-    member: ["#2D6A4F","#74A57F","#D9A441","#C48838","#A06B23","#B36F4D","#5C3D2E"],
-    asset:  ["#2D6A4F","#B8924E","#74A57F","#B36F4D","#5C3D2E","#A1A1A1"],
-  },
-  premarket: {
-    member: ["#185FA5","#378ADD","#5A8FCC","#85B7EB","#0C447C","#2E6DB8","#4A8FD4"],
-    asset:  ["#185FA5","#378ADD","#85B7EB","#0C447C","#5A8FCC","#B5D4F4"],
-  },
-  afterhours: {
-    member: ["#854F0B","#BA7517","#EF9F27","#FAC775","#633806","#9B6415","#C07A20"],
-    asset:  ["#854F0B","#BA7517","#EF9F27","#633806","#C07A20","#FAC775"],
-  },
-  closed: {
-    member: ["#5F5E5A","#888780","#B4B2A9","#999890","#444441","#6A6965","#777672"],
-    asset:  ["#5F5E5A","#888780","#B4B2A9","#444441","#6A6965","#D3D1C7"],
-  },
-};
-function getThemePalette() {
-  const ms = document.documentElement.getAttribute('data-market') || 'open';
-  return _PALETTES[ms] || _PALETTES.open;
-}
-// Convenience shorthands (used as arrays in chart/card code)
-function COLORS_MEMBER() { return getThemePalette().member; }
-function COLORS_ASSET()  { return getThemePalette().asset;  }
-
-// Look-through donut uses a wider 10-stop palette — also session-aware
-const _LT_PALETTES = {
-  open:       ['#2D6A4F','#74A57F','#D9A441','#C48838','#A06B23','#B36F4D','#5C3D2E','#4A8268','#E8B86D','#8FAF96'],
-  premarket:  ['#185FA5','#378ADD','#5A8FCC','#85B7EB','#0C447C','#2E6DB8','#4A8FD4','#6AA5E8','#9EC7F0','#B5D4F4'],
-  afterhours: ['#854F0B','#BA7517','#EF9F27','#FAC775','#633806','#9B6415','#C07A20','#D99B40','#F0BF70','#FAD89A'],
-  closed:     ['#5F5E5A','#888780','#B4B2A9','#D3D1C7','#444441','#6A6965','#777672','#999890','#AEACAA','#C5C3C0'],
-};
-function getLtPalette() {
-  const ms = document.documentElement.getAttribute('data-market') || 'open';
-  return _LT_PALETTES[ms] || _LT_PALETTES.open;
-}
+const COLORS_MEMBER = ["#2D6A4F","#74A57F","#D9A441","#C48838","#A06B23","#B36F4D","#5C3D2E"];
+const COLORS_ASSET  = ["#2D6A4F","#B8924E","#74A57F","#B36F4D","#5C3D2E","#A1A1A1"];
 
 let state = { wb: null, fileName: null, livePrices: {}, etfHoldings: {}, etfHoldingsStatus: 'idle',
               holdingsSort: { col: 'mv', dir: 'desc' },
@@ -1211,57 +923,40 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
 
 // ── Supabase config ───────────────────────────────────────────────────────
 const SUPABASE_XLSX_URL   = 'https://hcjugujmdlzfwdfecnjt.supabase.co/storage/v1/object/public/Portfolio/Family%20Portfolio%20Dashboard.xlsx';
-const TWELVE_DATA_KEY = '7eb290ab949b4a468a1838d08232feb1';
-const TICKER_MAP   = {
+const FINNHUB_KEY = 'd8gutopr01qhjpmpqt00d8gutopr01qhjpmpqt0g';
+const TICKER_MAP  = {
   'SPUS': 'SPUS',
   'SMH':  'SMH'
 };
 
 let _fetchingPrices = false;
 
-const SESSION_LABEL = {
-  open:       '● Prices live',
-  premarket:  '◑ Pre-market',
-  afterhours: '◑ After-hours',
-  closed:     '○ Last close',
-};
-
 async function fetchLivePrices() {
   if (_fetchingPrices) return;
   _fetchingPrices = true;
   const tag = document.getElementById('priceTag');
-  const ms  = detectMarketState();
-
   try {
     const results = {};
     await Promise.all(Object.keys(TICKER_MAP).map(async (ticker) => {
+      const symbol = TICKER_MAP[ticker];
       try {
-        const url = `https://api.twelvedata.com/quote?symbol=${ticker}&apikey=${TWELVE_DATA_KEY}&extended_hours=true`;
-        const r = await fetch(url);
+        const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_KEY}`);
         const d = await r.json();
-        if (d.status === 'error') {
-          console.warn(`[twelvedata] ${ticker}: ${d.message}`);
-          return;
+        if (d.c > 0) {
+          results[ticker] = {
+            price:     d.c,
+            prevClose: d.pc,
+            changePct: d.pc ? (d.c - d.pc) / d.pc : 0,
+          };
         }
-        // During extended hours, use extended_hours.price if available
-        const extHours  = d.extended_hours;
-        const isExt     = !!(extHours && extHours.price && (ms === 'premarket' || ms === 'afterhours'));
-        const price     = isExt ? parseFloat(extHours.price) : parseFloat(d.close);
-        const prevClose = parseFloat(d.previous_close);
-        const changePct = isExt
-          ? parseFloat(extHours.percent_change) / 100
-          : parseFloat(d.percent_change) / 100;
-        console.log(`[twelvedata] ${ticker}: ${price} (prev ${prevClose}, ext=${isExt}, session=${ms})`);
-        results[ticker] = { price, prevClose, changePct, isExtended: isExt, session: ms };
       } catch (e) {
-        console.error(`[prices] ${ticker} fetch error:`, e.message || e);
+        console.error(`[prices] ${ticker}:`, e.message || e);
       }
     }));
     if (Object.keys(results).length > 0) {
       Object.assign(state.livePrices, results);
-      const label = SESSION_LABEL[ms] || SESSION_LABEL.open;
-      const time  = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-      if (tag) tag.textContent = `${label} · ${time}`;
+      const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      if (tag) tag.textContent = `● Prices live · ${time}`;
     } else {
       if (tag) tag.textContent = '⚠ No prices returned';
     }
@@ -1297,7 +992,7 @@ async function fetchEtfConstituentPrices() {
 
   await Promise.all(top60.map(async ticker => {
     try {
-      const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=d8gutopr01qhjpmpqt00d8gutopr01qhjpmpqt0g`);
+      const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${FINNHUB_KEY}`);
       const d = await r.json();
       if (d.c > 0) state.livePrices[ticker] = {
         price: d.c, prevClose: d.pc, changePct: d.pc ? (d.c - d.pc) / d.pc : 0
@@ -1821,24 +1516,11 @@ function computePerformance(txs, holdings) {
   return out;
 }
 
-function marketStateBadge() {
-  const ms = document.documentElement.getAttribute('data-market') || 'open';
-  const cfg = {
-    open:       { cls: 'ms-open',       label: 'Market open',   note: '' },
-    premarket:  { cls: 'ms-premarket',  label: 'Pre-market',    note: '· indicative prices' },
-    afterhours: { cls: 'ms-afterhours', label: 'After-hours',   note: '· indicative prices' },
-    closed:     { cls: 'ms-closed',     label: 'Market closed', note: '· stale prices' },
-  };
-  const c = cfg[ms] || cfg.open;
-  const note = c.note ? `<span style="font-size:11px;color:var(--muted);margin-left:6px;">${c.note}</span>` : '';
-  return `<span class="market-state-badge ${c.cls}"><span class="ms-dot"></span>${c.label}</span>${note}`;
-}
-
 function renderMasthead() {
   const today = new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
   return `
     <div class="masthead">
-      <div class="eyebrow">Performance Report ${marketStateBadge()}</div>
+      <div class="eyebrow">Performance Report</div>
       <h1>Alkhamis Family Portfolio</h1>
       <div class="subtitle">Sharia-compliant joint account · 7-member internal allocation</div>
       <div class="meta">
@@ -1932,7 +1614,7 @@ function renderMemberCards(perf) {
     const share = (p.mv / totalMV) * 100;
     const profitClass = p.profit >= 0 ? '' : 'negative';
     return `
-      <div class="member" style="border-top: 3px solid ${COLORS_MEMBER()[i]}">
+      <div class="member" style="border-top: 3px solid ${COLORS_MEMBER[i]}">
         <div class="name">${m}</div>
         <div class="row"><span class="label">Cash Invested</span><span class="value">${FMT_USD(p.netInvested)}</span></div>
         <div class="row"><span class="label">Current Value</span><span class="value">${FMT_USD(p.mv)}</span></div>
@@ -2129,13 +1811,7 @@ function renderHoldings(holdings) {
   return `
     <div class="section">
       <h2>What We Own</h2>
-      <div class="section-sub">${(() => {
-        const ms = detectMarketState();
-        if (ms === 'open')       return 'Live prices · Day Chg and Day P&L update in real time.';
-        if (ms === 'premarket')  return 'Pre-market session · prices marked <span class="ext-badge pre">PRE</span> are extended-hours trades. Thin liquidity — treat as indicative.';
-        if (ms === 'afterhours') return 'After-hours session · prices marked <span class="ext-badge ah">AH</span> are extended-hours trades. Thin liquidity — treat as indicative.';
-        return 'Market closed · prices shown are last close. Day P&L reflects the prior session.';
-      })()}</div>
+      <div class="section-sub">Live prices · Day Chg and Day P&L update in real time.</div>
       <div class="table-card holdings-table-card">
         <table>
           <thead><tr>${[
@@ -2409,7 +2085,7 @@ function renderLookThroughChart() {
   const { top10, othersSum, etfTotalMV } = _ltDonutData;
   const tc = themeColors();
 
-  const PALETTE = getLtPalette();
+  const PALETTE = ['#2D6A4F','#74A57F','#D9A441','#C48838','#A06B23','#B36F4D','#5C3D2E','#4A8268','#E8B86D','#8FAF96'];
   const OTHERS_COLOR = tc.muted || '#aaa';
 
   const labels  = [...top10.map(d => d.ticker), 'Others'];
@@ -2567,13 +2243,13 @@ function renderCharts(perf, holdings, txs) {
           labels: MEMBERS,
           datasets: [{
             data: memberData,
-            backgroundColor: COLORS_MEMBER(), borderWidth: 2, borderColor: tc.paper
+            backgroundColor: COLORS_MEMBER, borderWidth: 2, borderColor: tc.paper
           }]
         },
         options: donutOptions,
         plugins: [donutCenterPlugin]
       }));
-      renderHtmlLegend(document.getElementById('memberLegend'), MEMBERS, memberData, COLORS_MEMBER());
+      renderHtmlLegend(document.getElementById('memberLegend'), MEMBERS, memberData, COLORS_MEMBER);
     }
     const posCtx = document.getElementById('positionChart');
     if (posCtx) {
@@ -2582,7 +2258,7 @@ function renderCharts(perf, holdings, txs) {
         .sort((a, b) => (b[1].mv || 0) - (a[1].mv || 0));
       const posLabels = tickers.map(t => t[0]);
       const posData = tickers.map(t => t[1].mv);
-      const posColors = COLORS_ASSET().slice(0, posLabels.length);
+      const posColors = COLORS_ASSET.slice(0, posLabels.length);
       chartInstances.push(new Chart(posCtx, {
         type: 'doughnut',
         data: {
