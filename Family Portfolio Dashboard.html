@@ -908,6 +908,7 @@ let state = { wb: null, fileName: null, livePrices: {}, etfHoldings: {}, etfHold
               holdingsSort: { col: 'mv', dir: 'desc' },
               ltSort: { col: 'total', dir: 'desc' },
               holdingsExpanded: false,
+              ltView: 'weight', ltExpanded: false,
               _holdings: null, _txs: null, _perf: null };
 
 document.getElementById('fileInput').addEventListener('change', async (e) => {
@@ -1709,6 +1710,17 @@ function toggleHoldingsExpand() {
   render();
 }
 
+function setLtView(view) {
+  state.ltView = view;
+  state.ltExpanded = false;
+  render();
+}
+
+function toggleLtExpand() {
+  state.ltExpanded = !state.ltExpanded;
+  render();
+}
+
 function setHoldingsSort(col) {
   if (state.holdingsSort.col === col) {
     state.holdingsSort.dir = state.holdingsSort.dir === 'desc' ? 'asc' : 'desc';
@@ -1956,15 +1968,24 @@ function renderLookThrough(holdings) {
     statusHtml = `<span class="lookthrough-status">✓ SMH ${smhCount} stocks · ${spusLabel}</span>`;
   }
 
-  // Split: stocks with price data get individual rows; the rest collapse into "Others"
+  // Split by price availability
   const withPrice    = sorted.filter(([t]) => state.livePrices?.[t]);
   const withoutPrice = sorted.filter(([t]) => !state.livePrices?.[t]);
-  const visibleRows  = withPrice;
 
-  function barHtml(pct) {
-    const w = Math.min(pct * 100 * 4, 100); // scale so 1% exposure = 4% bar width
-    return `<div class="lookthrough-bar-wrap"><div class="lookthrough-bar" style="width:${w}%"></div></div>`;
+  // View-specific sort
+  const COLLAPSE_AT = 10;
+  const ltView = state.ltView || 'weight';
+  let viewRows;
+  if (ltView === 'gainers') {
+    viewRows = [...withPrice].sort((a, b) =>
+      (state.livePrices[b[0]]?.changePct ?? -Infinity) - (state.livePrices[a[0]]?.changePct ?? -Infinity));
+  } else if (ltView === 'losers') {
+    viewRows = [...withPrice].sort((a, b) =>
+      (state.livePrices[a[0]]?.changePct ?? Infinity) - (state.livePrices[b[0]]?.changePct ?? Infinity));
+  } else {
+    viewRows = withPrice; // weight: already sorted by ltSort
   }
+  const visibleRows = state.ltExpanded ? viewRows : viewRows.slice(0, COLLAPSE_AT);
 
   const tableRows = visibleRows.map(([ticker, v], i) => {
     const pctOfPortfolio = totalPortfolioMV > 0 ? v.total / totalPortfolioMV : 0;
@@ -1990,8 +2011,7 @@ function renderLookThrough(holdings) {
     </tr>`;
   }).join('');
 
-
-  // Donut always shows top 10 by weight — independent of table sort
+  // Donut always shows top 10 by weight — independent of table view
   const byWeight = Object.entries(exposure).sort((a, b) => b[1].total - a[1].total);
   const top10 = byWeight.slice(0, 10).map(([ticker, v]) => ({
     ticker,
@@ -2001,6 +2021,18 @@ function renderLookThrough(holdings) {
     s + (totalPortfolioMV > 0 ? (v.total / totalPortfolioMV) * 100 : 0), 0);
   const etfTotalMV = byWeight.reduce((s, [, v]) => s + v.total, 0);
   _ltDonutData = { top10, othersSum, etfTotalMV };
+
+  // Tab button helper
+  const tabBtn = (view, label) => {
+    const active = ltView === view;
+    return `<button onclick="setLtView('${view}')" style="
+      padding:6px 16px; border-radius:20px; font-size:13px; cursor:pointer;
+      border:1px solid ${active ? 'var(--accent)' : 'var(--line)'};
+      background:${active ? 'var(--accent)' : 'transparent'};
+      color:${active ? '#fff' : 'var(--muted)'};
+      font-weight:${active ? '600' : '400'};
+      transition:all 0.15s;">${label}</button>`;
+  };
 
   return `
     <div class="section">
@@ -2026,6 +2058,13 @@ function renderLookThrough(holdings) {
         <div class="lt-donut-legend" id="lt-donut-legend"></div>
       </div>
 
+      <!-- View tabs -->
+      <div style="display:flex;gap:8px;margin:16px 0 12px">
+        ${tabBtn('weight', 'By Weight')}
+        ${tabBtn('gainers', '▲ Top Gainers')}
+        ${tabBtn('losers', '▼ Top Losers')}
+      </div>
+
       <div class="table-card holdings-table-card">
         <table>
           <thead><tr>
@@ -2039,16 +2078,16 @@ function renderLookThrough(holdings) {
               ['smh','via SMH','100px'],
               ['spus','via SPUS','100px'],
             ].map(([c, label, w]) => {
-              const active = state.ltSort.col === c;
+              const active = state.ltSort.col === c && ltView === 'weight';
               const arrow  = active ? (state.ltSort.dir === 'desc' ? ' ↓' : ' ↑') : '';
-              const clickable = c !== 'company';
+              const clickable = c !== 'company' && ltView === 'weight';
               const style = `width:${w};text-align:center;${clickable ? 'cursor:pointer;user-select:none;' : ''}${active ? 'color:var(--ink)' : ''}`;
               return `<th style="${style}"${clickable ? ` onclick="setLtSort('${c}')"` : ''}>${label}${arrow}</th>`;
             }).join('')}
           </tr></thead>
           <tbody>
             ${tableRows}
-            ${(() => {
+            ${ltView === 'weight' ? (() => {
               if (!withoutPrice.length) return '';
               const othPct   = withoutPrice.reduce((s,[,v]) => s + (totalPortfolioMV > 0 ? v.total/totalPortfolioMV : 0), 0);
               const othTotal = withoutPrice.reduce((s,[,v]) => s + v.total, 0);
@@ -2064,10 +2103,24 @@ function renderLookThrough(holdings) {
                 <td class="num">${othSmh > 0.5 ? `<div>${FMT_$(othSmh)}</div><div><span class="lookthrough-tag tag-smh">SMH</span></div>` : '–'}</td>
                 <td class="num">${othSpus > 0.5 ? `<div>${FMT_$(othSpus)}</div><div><span class="lookthrough-tag tag-spus">SPUS</span></div>` : '–'}</td>
               </tr>`;
-            })()}
+            })() : ''}
           </tbody>
         </table>
       </div>
+      ${viewRows.length > COLLAPSE_AT ? `
+        <button onclick="toggleLtExpand()" style="
+          display:block; margin:12px auto 0; padding:7px 20px;
+          background:transparent; border:1px solid var(--line);
+          border-radius:20px; color:var(--muted); font-size:13px;
+          cursor:pointer; transition: border-color 0.15s, color 0.15s;"
+          onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+          onmouseout="this.style.borderColor='var(--line)';this.style.color='var(--muted)'">
+          ${state.ltExpanded
+            ? '↑ Show top 10 only'
+            : ltView === 'gainers' ? `↓ Show all ${viewRows.length} gainers`
+            : ltView === 'losers'  ? `↓ Show all ${viewRows.length} losers`
+            :                        `↓ Show all ${viewRows.length} stocks`}
+        </button>` : ''}
     </div>
   `;
 }
