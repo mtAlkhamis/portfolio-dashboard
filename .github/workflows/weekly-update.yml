@@ -1,0 +1,43 @@
+name: Weekly Portfolio Dashboard Update
+
+on:
+  schedule:
+    # Monday 06:05 UTC = ~09:05 Kuwait time (UTC+3, no DST)
+    - cron: '5 6 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install --quiet yfinance pandas requests
+
+      - name: Update benchmark chart
+        run: python update_benchmark.py
+
+      - name: Update SPUS ETF holdings
+        run: python update_etf_holdings.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "portfolio-dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes to commit."
+          else
+            git add "Family Portfolio Dashboard.html" benchmark_state.json
+            git commit -m "Weekly benchmark + SPUS holdings update ($(date -u +%Y-%m-%d))"
+            git push
+          fi
